@@ -70,9 +70,9 @@ to start otherwise.
 | `MAX_TOTAL_SIZE_MB` | `200` | Largest request body (checked before the upload is read) |
 | `MAX_FILES` | `20` | Most files in one request |
 | `MAX_IMAGE_PIXELS` | `100000000` | Largest image (width × height) for Image to PDF |
-| `MAX_CONCURRENT_COMPRESSIONS` | CPU count | Ghostscript jobs at once; extra requests get `503` |
+| `MAX_CONCURRENT_COMPRESSIONS` | CPU count | Compressions and size estimates at once; extra requests get `503`. An estimate only starts if a slot stays free for a compression, so with `1` there are no estimates |
 | `MAX_CONCURRENT_IMAGE_JOBS` | `min(CPU count, 4)` | Image conversions at once; extra requests get `503` |
-| `GS_TIMEOUT_SECONDS` | `120` | Time limit for one compression |
+| `GS_TIMEOUT_SECONDS` | `120` | Time limit for one compression, or for all three levels of a size estimate |
 | `GS_MEMORY_LIMIT_MB` | `2048` | Memory limit for one Ghostscript run |
 | `GS_BINARY` | `gs` | Ghostscript executable |
 | `ALLOWED_ORIGINS` | `http://localhost:5173` | Comma-separated CORS origins (only needed when the frontend runs on another origin) |
@@ -90,6 +90,7 @@ JSON `{"detail": "..."}` with status 400, 413, 422 or 503.
 |---|---|---|
 | `POST /api/merge` | `files` (2 or more PDFs, in order) | `merged.pdf` |
 | `POST /api/compress` | `file` (one PDF), `level` = `low` \| `medium` (default) \| `high` | `<name>_compressed.pdf`, plus `X-Original-Size` / `X-Compressed-Size` headers |
+| `POST /api/compress/estimate` | `file` (one PDF) | `{"original_size": n, "sizes": {"low": n, "medium": n, "high": n}}`: the exact size `/api/compress` returns at each level |
 | `POST /api/images-to-pdf` | `files` (1 or more JPEG/PNG, in order) | `images.pdf` |
 | `GET /api/health` | none | `{"status": "ok"}` |
 

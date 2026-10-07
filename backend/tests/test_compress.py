@@ -14,6 +14,12 @@ def pdf_upload(name: str, data: bytes):
     return {"file": (name, data, "application/pdf")}
 
 
+@pytest.fixture(autouse=True)
+def compression_slots(monkeypatch):
+    # The default is the CPU count; an estimate needs two free slots, which a 1-CPU runner lacks.
+    monkeypatch.setattr(config, "MAX_CONCURRENT_COMPRESSIONS", 4)
+
+
 @pytest.fixture(scope="module")
 def image_pdf() -> bytes:
     return make_image_pdf(pages=2)
@@ -168,3 +174,121 @@ def test_busy_check_happens_before_upload_is_saved(client, monkeypatch):
     monkeypatch.setattr(compress, "save_upload", fail)
     res = client.post("/api/compress", files=pdf_upload("a.pdf", make_pdf([100])))
     assert res.status_code == 503
+
+
+@requires_gs
+def test_estimate_matches_actual_sizes(client, image_pdf):
+    res = client.post("/api/compress/estimate", files=pdf_upload("scan.pdf", image_pdf))
+    assert res.status_code == 200
+    body = res.json()
+    assert body["original_size"] == len(image_pdf)
+    assert set(body["sizes"]) == {"low", "medium", "high"}
+    for level, size in body["sizes"].items():
+        actual = client.post("/api/compress", files=pdf_upload("scan.pdf", image_pdf), data={"level": level})
+        assert size == len(actual.content)
+
+
+@requires_gs
+def test_estimate_never_exceeds_original(client):
+    original = make_pdf([100])
+    res = client.post("/api/compress/estimate", files=pdf_upload("a.pdf", original))
+    assert res.status_code == 200
+    assert all(size <= len(original) for size in res.json()["sizes"].values())
+
+
+def test_estimate_non_pdf_rejected(client):
+    res = client.post("/api/compress/estimate", files=pdf_upload("a.pdf", b"not a pdf"))
+    assert res.status_code == 400
+
+
+def test_estimate_missing_ghostscript_returns_503(client, monkeypatch):
+    monkeypatch.setattr(config, "GS_BINARY", "definitely-not-ghostscript")
+    res = client.post("/api/compress/estimate", files=pdf_upload("a.pdf", make_pdf([100])))
+    assert res.status_code == 503
+    assert "Ghostscript" in res.json()["detail"]
+
+
+def test_estimate_timeout_rejected(client, image_pdf, monkeypatch):
+    import subprocess
+
+    def fake_run(cmd, **kwargs):
+        raise subprocess.TimeoutExpired(cmd, kwargs["timeout"])
+
+    monkeypatch.setattr(config, "GS_BINARY", "sh")
+    monkeypatch.setattr("app.services.compress.subprocess.run", fake_run)
+    res = client.post("/api/compress/estimate", files=pdf_upload("a.pdf", image_pdf))
+    assert res.status_code == 400
+    assert "too long" in res.json()["detail"]
+
+
+def test_estimate_busy_server_returns_503_before_upload(client, monkeypatch, leftover_workdirs):
+    from app.routers import compress
+
+    async def fail(*args, **kwargs):
+        raise AssertionError("upload should not be saved when the server is busy")
+
+    monkeypatch.setattr(config, "MAX_CONCURRENT_COMPRESSIONS", 0)
+    monkeypatch.setattr(compress, "save_upload", fail)
+    res = client.post("/api/compress/estimate", files=pdf_upload("a.pdf", make_pdf([100])))
+    assert res.status_code == 503
+    assert leftover_workdirs() == set()
+
+
+@requires_gs
+def test_estimate_temp_files_cleaned_up(client, image_pdf, leftover_workdirs):
+    client.post("/api/compress/estimate", files=pdf_upload("a.pdf", image_pdf))
+    client.post("/api/compress/estimate", files=pdf_upload("a.pdf", b"not a pdf"))
+    assert leftover_workdirs() == set()
+
+
+def _fake_gs(monkeypatch, seconds_per_run: float) -> list[float]:
+    """Replace Ghostscript with a stub that copies the input and advances a fake clock; returns the timeouts used."""
+    clock = [1000.0]
+    timeouts: list[float] = []
+
+    def fake_run(cmd, **kwargs):
+        timeouts.append(kwargs["timeout"])
+        clock[0] += seconds_per_run
+        out = next(arg.removeprefix("-sOutputFile=") for arg in cmd if arg.startswith("-sOutputFile="))
+        shutil.copyfile(cmd[-1], out)
+
+    monkeypatch.setattr(config, "GS_BINARY", "sh")  # any binary that exists
+    monkeypatch.setattr(config, "GS_TIMEOUT_SECONDS", 120)
+    monkeypatch.setattr("app.services.compress.subprocess.run", fake_run)
+    monkeypatch.setattr("app.services.compress.time.monotonic", lambda: clock[0])
+    monkeypatch.setattr("app.routers.compress.time.monotonic", lambda: clock[0])
+    return timeouts
+
+
+def test_estimate_levels_share_one_time_budget(client, monkeypatch):
+    timeouts = _fake_gs(monkeypatch, seconds_per_run=30)
+    res = client.post("/api/compress/estimate", files=pdf_upload("a.pdf", make_pdf([100])))
+    assert res.status_code == 200
+    assert timeouts == [120, 90, 60]
+
+
+def test_estimate_stops_early_when_levels_wont_fit(client, monkeypatch, leftover_workdirs):
+    # 50 s for the first level projects 100 s for the other two, but only 70 s are left.
+    timeouts = _fake_gs(monkeypatch, seconds_per_run=50)
+    res = client.post("/api/compress/estimate", files=pdf_upload("a.pdf", make_pdf([100])))
+    assert res.status_code == 400
+    assert "too long" in res.json()["detail"]
+    assert timeouts == [120]
+    assert leftover_workdirs() == set()
+
+
+@pytest.mark.parametrize(("slots", "busy", "allowed"), [(1, 0, False), (2, 0, True), (4, 1, True), (4, 2, False)])
+def test_estimate_leaves_half_the_slots_for_compression(client, monkeypatch, slots, busy, allowed):
+    from app.routers import compress
+
+    monkeypatch.setattr(config, "MAX_CONCURRENT_COMPRESSIONS", slots)
+    monkeypatch.setattr(compress.limiter, "active", busy)
+    if not allowed:
+
+        async def fail(*args, **kwargs):
+            raise AssertionError("upload should not be saved when the estimate is refused")
+
+        monkeypatch.setattr(compress, "save_upload", fail)
+    _fake_gs(monkeypatch, seconds_per_run=1)
+    res = client.post("/api/compress/estimate", files=pdf_upload("a.pdf", make_pdf([100])))
+    assert res.status_code == (200 if allowed else 503)

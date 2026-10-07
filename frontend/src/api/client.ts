@@ -8,10 +8,24 @@ export class ApiError extends Error {}
 
 /** POST multipart form data and return the response file. */
 export async function postForFile(url: string, form: FormData, fallbackName: string): Promise<FileResult> {
+  const res = await post(url, form)
+  const filename = filenameFromDisposition(res.headers.get('Content-Disposition') ?? '') ?? fallbackName
+  return { blob: await res.blob(), filename, headers: res.headers }
+}
+
+/** POST multipart form data and return the parsed JSON response. */
+export async function postForJson<T>(url: string, form: FormData, signal?: AbortSignal): Promise<T> {
+  const res = await post(url, form, signal)
+  return (await res.json()) as T
+}
+
+async function post(url: string, form: FormData, signal?: AbortSignal): Promise<Response> {
   let res: Response
   try {
-    res = await fetch(url, { method: 'POST', body: form })
-  } catch {
+    res = await fetch(url, { method: 'POST', body: form, signal })
+  } catch (e) {
+    // Let callers tell a deliberate cancel apart from a network failure.
+    if (signal?.aborted) throw e
     throw new ApiError('Could not reach the server. Is the backend running?')
   }
 
@@ -26,9 +40,7 @@ export async function postForFile(url: string, form: FormData, fallbackName: str
     }
     throw new ApiError(message)
   }
-
-  const filename = filenameFromDisposition(res.headers.get('Content-Disposition') ?? '') ?? fallbackName
-  return { blob: await res.blob(), filename, headers: res.headers }
+  return res
 }
 
 /** Prefer the UTF-8 `filename*` (RFC 6266) and fall back to the plain `filename`. */

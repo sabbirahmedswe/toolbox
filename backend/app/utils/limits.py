@@ -15,15 +15,18 @@ class JobLimiter:
         self._max_jobs = max_jobs
         self.active = 0
 
-    def check(self) -> None:
-        """Fail fast with a 503 if no slot is free, before the caller does any upload I/O."""
-        if self.active >= self._max_jobs():
+    def check(self, reserve: int = 0) -> None:
+        """Fail fast with a 503 if no slot is free, before the caller does any upload I/O.
+
+        `reserve` slots must stay free after this job starts, so low-priority work can't crowd out the rest.
+        """
+        if self.active + reserve >= self._max_jobs():
             raise HTTPException(503, "The server is busy processing other files. Please try again in a moment.")
 
     @asynccontextmanager
-    async def slot(self):
+    async def slot(self, reserve: int = 0):
         # Checked again here: other jobs may have started while the upload was being saved.
-        self.check()
+        self.check(reserve)
         self.active += 1
         try:
             yield
