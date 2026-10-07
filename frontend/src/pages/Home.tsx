@@ -5,8 +5,22 @@ export default function Home() {
   return (
     <>
       <section className="hero">
-        <h1>Every tool you need to work with PDFs</h1>
-        <p>Merge, compress and convert PDFs. Files are processed and never stored.</p>
+        <div className="hero-art" aria-hidden="true">
+          {TOOLS.map((t) => (
+            <img key={t.path} src={t.icon} alt="" />
+          ))}
+        </div>
+        <p className="hero-eyebrow">
+          <span className="hero-dot" />
+          No sign-up · Nothing stored
+        </p>
+        <h1>
+          Everyday file tools, <em>all in one place.</em>
+        </h1>
+        <p className="hero-lede">
+          Merge, compress and convert your documents and images in seconds. Each file is processed in a temporary
+          folder and deleted as soon as you get the result.
+        </p>
       </section>
       <section className="tool-grid">
         {TOOLS.map((t) => (

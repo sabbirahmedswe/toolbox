@@ -1,6 +1,7 @@
 # <img src="frontend/public/favicon.svg" alt="" width="32" height="32" align="top"> Toolbox
 
-A small, local, iLovePDF-style web app for working with PDFs:
+A small, local, iLovePDF-style toolbox for everyday file tasks. It currently has these PDF tools, and image
+tools (compression, conversion) are planned:
 
 - **Merge PDF**: combine several PDFs into one, in the order you choose.
 - **Compress PDF**: shrink a PDF with Ghostscript (three levels: less, recommended, extreme).

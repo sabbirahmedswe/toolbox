@@ -1,6 +1,6 @@
-# iLovePDF-style PDF tool
+# Toolbox
 
-Local PDF tool: FastAPI backend in `backend/`, React + Vite + TypeScript frontend in `frontend/`.
+Local iLovePDF-style file toolbox (PDF tools today, image tools planned): FastAPI backend in `backend/`, React + Vite + TypeScript frontend in `frontend/`.
 See `README.md` for features, setup, configuration and the API; this file covers how to work on the code.
 
 ## Working on this project
@@ -46,6 +46,8 @@ Setup and run instructions are in `README.md`. These are the forms to use from C
 
 ## Frontend conventions
 
-- Each tool is one entry in `src/tools.tsx` (route, card and nav are derived from it).
+- Each tool is one entry in `src/tools.tsx` (route, card, nav and the home hero's decorative icons are derived
+  from it; the hero shows the first three icons).
+- Keep site-wide copy (hero, page title) tool-agnostic: the toolbox isn't PDF-only.
 - Use `postForFile` / `downloadBlob` from `src/api/client.ts`, and `FileDropzone` / `SortableFileList` for uploads.
 - Plain CSS in `src/index.css` using the `:root` variables; no UI library.
