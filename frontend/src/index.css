@@ -147,7 +147,7 @@ h1, h2, h3 { margin: 0; }
   display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem;
 }
 .file-card {
-  flex: 0 0 160px; min-width: 0; position: relative; background: var(--surface); border: 1px solid var(--border);
+  flex: 0 0 210px; min-width: 0; position: relative; background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 1rem 0.75rem 0.75rem;
   cursor: grab; touch-action: none; user-select: none;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -160,23 +160,28 @@ h1, h2, h3 { margin: 0; }
   display: grid; place-items: center; border-radius: 999px;
   background: var(--bg); color: var(--muted); font-size: 0.75rem; font-weight: 700;
 }
-.file-grip {
-  position: absolute; top: 0.85rem; left: 50%; width: 20px; height: 12px; margin-left: -10px;
-  fill: var(--muted); opacity: 0.6; transition: opacity 0.15s, fill 0.15s;
-}
-.file-card:hover .file-grip { opacity: 1; fill: var(--accent); }
 .file-remove {
   position: absolute; top: 0.4rem; right: 0.4rem; width: 1.6rem; height: 1.6rem;
   border: none; border-radius: 999px; background: var(--bg); color: var(--muted);
   font-size: 1.1rem; line-height: 1; cursor: pointer;
 }
 .file-remove:hover { background: var(--accent); color: #fff; }
-.file-preview { height: 110px; display: grid; place-items: center; margin-bottom: 0.6rem; }
+/* A fixed 100% x 100% cell gives the thumbnail's max-width/max-height something definite to resolve against;
+   with auto tracks the cell grows to the canvas's (2x DPI) size and the preview spills out of the card. */
+.file-preview {
+  height: 190px; display: grid; grid-template: 100% / 100%; place-items: center; margin-bottom: 0.6rem;
+}
+/* Keep two cards per row on phones. */
+@media (max-width: 480px) {
+  .file-card { flex-basis: 150px; }
+  .file-preview { height: 110px; }
+}
 .file-badge {
   width: 64px; height: 84px; display: grid; place-items: center; border-radius: 6px;
   background: #fdeceb; color: var(--accent); font-weight: 800; font-size: 0.9rem;
 }
 .file-name { font-size: 0.85rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-card .file-name { font-size: 0.75rem; font-weight: 400; }
 .file-size { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
 
 .reorder-hint {

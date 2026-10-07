@@ -1,4 +1,5 @@
 import MultiFileTool from '../components/MultiFileTool'
+import PdfThumb from '../components/PdfThumb'
 
 export default function MergePage() {
   return (
@@ -19,6 +20,7 @@ export default function MergePage() {
       doneTitle="Your PDFs have been merged!"
       downloadLabel="Download merged PDF"
       againLabel="Merge more files"
+      renderPreview={(item) => <PdfThumb file={item.file} />}
     />
   )
 }

@@ -16,7 +16,6 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { ReactNode } from 'react'
-import { formatBytes } from '../api/client'
 import type { FileItem } from '../fileItems'
 
 interface Props {
@@ -81,11 +80,6 @@ function SortableFile({ item, index, preview, disabled, onRemove }: SortableFile
     >
       <span className="file-index">{index + 1}</span>
       {!disabled && (
-        <svg className="file-grip" viewBox="0 0 20 12" aria-hidden="true">
-          {[4, 10, 16].flatMap((x) => [3, 9].map((y) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.6" />))}
-        </svg>
-      )}
-      {!disabled && (
         <button
           type="button"
           className="file-remove"
@@ -100,7 +94,6 @@ function SortableFile({ item, index, preview, disabled, onRemove }: SortableFile
       <div className="file-name" title={item.file.name}>
         {item.file.name}
       </div>
-      <div className="file-size">{formatBytes(item.file.size)}</div>
     </li>
   )
 }
