@@ -91,7 +91,7 @@ function SortableFile({ item, index, preview, disabled, onRemove }: SortableFile
         </button>
       )}
       <div className="file-preview">{preview ?? <span className="file-badge">PDF</span>}</div>
-      <div className="file-name" title={item.file.name}>
+      <div className="file-card-name" title={item.file.name}>
         {item.file.name}
       </div>
     </li>

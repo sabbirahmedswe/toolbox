@@ -36,7 +36,12 @@ export default function FileDropzone({ accept, multiple = true, onFiles, onRejec
     >
       <input {...getInputProps()} />
       {compact ? (
-        <span className="dropzone-add">+ {label}</span>
+        <span className="dropzone-add">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          {label}
+        </span>
       ) : (
         <>
           <span className="btn">{label}</span>
