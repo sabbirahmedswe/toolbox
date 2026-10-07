@@ -1,0 +1,43 @@
+# iLovePDF-style PDF tool
+
+Local PDF tool (no auth, nothing persisted): Merge PDF, Compress PDF, Image (JPEG/PNG) to PDF.
+FastAPI backend in `backend/`, React + Vite + TypeScript frontend in `frontend/`.
+
+## Working on this project
+
+- Build features **one step at a time** and stop after each for the user to review. Don't start the next step until asked.
+- Commit only when the user asks.
+- **Every code review must include a security pass**: injection, resource exhaustion / DoS, handling of
+  untrusted input (Ghostscript, pypdf, Pillow), Content-Disposition / filename handling, and XSS.
+- There is no browser in the dev environment: verify end-to-end with `curl` through the Vite proxy
+  (`http://localhost:5173/api/...`) and leave UI checks to the user.
+
+## Commands
+
+- Backend: `cd backend && .venv/bin/pytest -q -p no:warnings` · run with `.venv/bin/uvicorn app.main:app --reload` (port 8000)
+- Frontend: `cd frontend && npm run dev` (port 5173, proxies `/api` to 8000) · `npx tsc -b && npm run lint && npm run build`
+- Stopping dev servers: `pgrep -f "[u]vicorn app.main|[b]in/vite"`; the bracket stops the pattern matching the shell itself.
+
+## Backend conventions
+
+- Routers (`app/routers/`) handle HTTP; services (`app/services/`) are pure functions that raise
+  `ProcessingError`, which becomes a 400 `{detail}`.
+- Uploads: `save_upload(upload, dest, allowed_kinds)` validates by magic bytes and size. Never trust extensions.
+- Return results from memory as `Response(bytes)` and delete the temp workdir in a `finally` block. Don't use a
+  `FileResponse` / `BackgroundTask` for cleanup: Starlette skips it on client abort or a bad `Range` header.
+- Run CPU-heavy or blocking work with `run_in_threadpool`.
+- CPU-heavy endpoints use a `JobLimiter` (`app/utils/limits.py`): call `limiter.check()` before saving uploads
+  and `async with limiter.slot()` around processing.
+- Build download headers with `attachment(filename)` (RFC 6266 ASCII fallback + `filename*`).
+- Limits live in `app/config.py` (env-driven, validated). Read `config.X` at request time so tests can monkeypatch.
+  Keep `frontend/src/fileItems.ts` limits in sync with the defaults.
+- Ghostscript runs with `-dSAFER`, memory/CPU `ulimit`s via an `sh` wrapper (not `preexec_fn`), a timeout,
+  and output discarded.
+- Pillow: restrict decoders with `Image.open(..., formats=[...])` and enforce `MAX_IMAGE_PIXELS` before decoding.
+- Tests generate their fixtures in `tests/helpers.py`. Tests that need Ghostscript skip when it's missing.
+
+## Frontend conventions
+
+- Each tool is one entry in `src/tools.tsx` (route, card and nav are derived from it).
+- Use `postForFile` / `downloadBlob` from `src/api/client.ts`, and `FileDropzone` / `SortableFileList` for uploads.
+- Plain CSS in `src/index.css` using the `:root` variables; no UI library.
