@@ -1,7 +1,7 @@
 # iLovePDF-style PDF tool
 
-Local PDF tool (no auth, nothing persisted): Merge PDF, Compress PDF, Image (JPEG/PNG) to PDF.
-FastAPI backend in `backend/`, React + Vite + TypeScript frontend in `frontend/`.
+Local PDF tool: FastAPI backend in `backend/`, React + Vite + TypeScript frontend in `frontend/`.
+See `README.md` for features, setup, configuration and the API; this file covers how to work on the code.
 
 ## Working on this project
 
@@ -11,14 +11,20 @@ FastAPI backend in `backend/`, React + Vite + TypeScript frontend in `frontend/`
   untrusted input (Ghostscript, pypdf, Pillow), Content-Disposition / filename handling, and XSS.
 - There is no browser in the dev environment: verify end-to-end with `curl` through the Vite proxy
   (`http://localhost:5173/api/...`) and leave UI checks to the user.
+- Keep `README.md` in sync: when a setting, endpoint, field or limit changes, update its Configuration and API
+  tables. Limit changes also go in `frontend/src/fileItems.ts` and `client_max_body_size` in `frontend/nginx.conf`.
 
 ## Commands
 
-- Backend setup: `.venv/bin/pip install -r requirements-dev.txt` (runtime deps only in `requirements.txt`, which the Docker image uses)
-- Backend: `cd backend && .venv/bin/pytest -q -p no:warnings` · run with `.venv/bin/uvicorn app.main:app --reload` (port 8000)
-- Frontend: `cd frontend && npm run dev` (port 5173, proxies `/api` to 8000) · `npx tsc -b && npm run lint && npm run build`
-- Stopping dev servers: `pgrep -f "[u]vicorn app.main|[b]in/vite"`; the bracket stops the pattern matching the shell itself.
-- Docker: `docker compose up --build` → app on http://localhost:8080 (nginx proxies `/api` to the backend). Docker is not installed in the dev WSL distro, so compose can only be verified by the user.
+Setup and run instructions are in `README.md`. These are the forms to use from Claude's shell:
+
+- Backend tests: `cd backend && .venv/bin/pytest -q -p no:warnings` (`-p no:warnings` hides a Starlette testclient deprecation).
+  Test-only deps live in `requirements-dev.txt`; `requirements.txt` is runtime only (used by the Docker image).
+- Frontend checks: `cd frontend && npx tsc -b && npm run lint && npm run build`
+- Start dev servers in the background with `nohup ... &`; stop them by PID from `pgrep -f "[u]vicorn app.main|[b]in/vite"`.
+  The brackets stop the pattern matching the calling shell. Plain `pkill -f` kills the shell (exit 144).
+- Docker (via Docker Desktop WSL integration): this shell may predate the user's `docker` group membership, so run
+  `sg docker -c "docker compose up --build"` if plain `docker` gives "permission denied" on the socket.
 
 ## Backend conventions
 
