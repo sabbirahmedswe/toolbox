@@ -1,8 +1,13 @@
+import type { ReactElement } from 'react'
+import MergePage from './pages/MergePage'
+
 export interface Tool {
   path: string
   title: string
   description: string
   icon: string
+  /** The tool's page; tools without one show a "Coming soon" placeholder. */
+  page?: ReactElement
 }
 
 export const TOOLS: Tool[] = [
@@ -11,6 +16,7 @@ export const TOOLS: Tool[] = [
     title: 'Merge PDF',
     description: 'Combine multiple PDFs into one file, in the order you choose.',
     icon: '⧉',
+    page: <MergePage />,
   },
   {
     path: '/compress',
