@@ -25,7 +25,7 @@ h1, h2, h3 { margin: 0; }
 .header {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 3rem;
   padding: 0.9rem 2rem;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -37,7 +37,7 @@ h1, h2, h3 { margin: 0; }
   position: relative; top: -0.06em; /* optical centring: lift the lowercase x-height to the nav links' middle */
   color: var(--nav-text);
 }
-.header nav { display: flex; align-items: center; gap: 2rem; flex-wrap: wrap; }
+.header nav { display: flex; align-items: center; gap: 2.75rem; flex-wrap: wrap; }
 .header nav a { font-weight: 600; font-size: 0.9rem; text-transform: uppercase; color: var(--nav-text); }
 .header nav a:hover { color: var(--accent); }
 
