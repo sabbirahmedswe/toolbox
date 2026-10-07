@@ -48,6 +48,20 @@ def test_higher_levels_compress_more(client, image_pdf):
 
 
 @requires_gs
+@pytest.mark.parametrize("level", ["low", "medium", "high"])
+def test_images_downsampled_to_level_dpi_as_jpeg(client, image_pdf, level):
+    from app.services.compress import LEVELS
+
+    res = client.post("/api/compress", files=pdf_upload("a.pdf", image_pdf), data={"level": level})
+    page = PdfReader(io.BytesIO(res.content)).pages[0]
+    (image,) = [x.get_object() for x in page["/Resources"]["/XObject"].values()]
+    page_width_in = float(page.mediabox.width) / 72
+    # JPEG, not the lossless encoding Ghostscript picks for smooth photos, which can grow the file.
+    assert image["/Filter"] == "/DCTDecode"
+    assert image["/Width"] / page_width_in == pytest.approx(LEVELS[level].dpi, rel=0.02)
+
+
+@requires_gs
 def test_default_level_is_medium(client, image_pdf):
     default = client.post("/api/compress", files=pdf_upload("a.pdf", image_pdf))
     medium = client.post("/api/compress", files=pdf_upload("a.pdf", image_pdf), data={"level": "medium"})
@@ -292,3 +306,11 @@ def test_estimate_leaves_half_the_slots_for_compression(client, monkeypatch, slo
     _fake_gs(monkeypatch, seconds_per_run=1)
     res = client.post("/api/compress/estimate", files=pdf_upload("a.pdf", make_pdf([100])))
     assert res.status_code == (200 if allowed else 503)
+
+
+@pytest.mark.parametrize(("dpi", "qfactor"), [(0, 0.4), (150, 0.0), (150, 1e-05), (150, 3.0), (150.0, 0.4), (150, "0.4")])
+def test_level_settings_reject_out_of_range_values(dpi, qfactor):
+    from app.services.compress import LevelSettings
+
+    with pytest.raises(ValueError):
+        LevelSettings("/ebook", dpi, qfactor)

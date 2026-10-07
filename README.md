@@ -4,7 +4,9 @@ A small, local, iLovePDF-style toolbox for everyday file tasks. It currently has
 tools (compression, conversion) are planned:
 
 - **Merge PDF**: combine several PDFs into one, in the order you choose.
-- **Compress PDF**: shrink a PDF with Ghostscript (three levels: less, recommended, extreme).
+- **Compress PDF**: shrink a PDF with Ghostscript. Images above 200 dpi (less compression), 150 dpi (recommended)
+  or 120 dpi (extreme) are downsampled to it, and colour images are stored as JPEG; text and vector graphics are
+  left sharp.
 - **Image to PDF**: turn JPG and PNG images into a PDF, one image per page.
 
 There are no accounts and nothing is stored. Each file is processed in a temporary folder that is
