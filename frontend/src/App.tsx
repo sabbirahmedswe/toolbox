@@ -7,7 +7,8 @@ export default function App() {
     <div className="app">
       <header className="header">
         <Link to="/" className="logo">
-          Toolbox
+          <img src="/favicon.svg" alt="" className="logo-icon" />
+          <span>Toolbox</span>
         </Link>
         <nav>
           {TOOLS.map((t) => (
