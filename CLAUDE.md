@@ -14,9 +14,11 @@ FastAPI backend in `backend/`, React + Vite + TypeScript frontend in `frontend/`
 
 ## Commands
 
+- Backend setup: `.venv/bin/pip install -r requirements-dev.txt` (runtime deps only in `requirements.txt`, which the Docker image uses)
 - Backend: `cd backend && .venv/bin/pytest -q -p no:warnings` · run with `.venv/bin/uvicorn app.main:app --reload` (port 8000)
 - Frontend: `cd frontend && npm run dev` (port 5173, proxies `/api` to 8000) · `npx tsc -b && npm run lint && npm run build`
 - Stopping dev servers: `pgrep -f "[u]vicorn app.main|[b]in/vite"`; the bracket stops the pattern matching the shell itself.
+- Docker: `docker compose up --build` → app on http://localhost:8080 (nginx proxies `/api` to the backend). Docker is not installed in the dev WSL distro, so compose can only be verified by the user.
 
 ## Backend conventions
 

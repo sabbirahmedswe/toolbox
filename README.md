@@ -1,0 +1,118 @@
+# iLovePDF Tool
+
+A small, local, iLovePDF-style web app for working with PDFs:
+
+- **Merge PDF**: combine several PDFs into one, in the order you choose.
+- **Compress PDF**: shrink a PDF with Ghostscript (three levels: less, recommended, extreme).
+- **Image to PDF**: turn JPG and PNG images into a PDF, one image per page.
+
+There are no accounts and nothing is stored. Each file is processed in a temporary folder that is
+deleted before the response is sent.
+
+**Stack:** FastAPI (Python 3.13) backend · React + Vite + TypeScript frontend · Ghostscript, pypdf, Pillow and img2pdf.
+
+## Run with Docker (recommended)
+
+Requires Docker with Compose v2.
+
+```bash
+docker compose up --build
+```
+
+- App: http://localhost:8080
+- API docs (Swagger): http://localhost:8000/docs
+
+Both ports are bound to `127.0.0.1`, so the app is only reachable from this machine. To expose it on
+your network, change the `ports` entries in `docker-compose.yml`. The app has no authentication, so
+only do this on a network you trust.
+
+Rebuild regularly (`docker compose build --pull`) to pick up security fixes for Ghostscript and the base images.
+
+## Run locally (development)
+
+Requirements: Python 3.13, Node 22 and Ghostscript (`sudo apt install ghostscript`, or `brew install ghostscript`).
+
+**Backend**
+
+```bash
+cd backend
+python3 -m venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/uvicorn app.main:app --reload        # http://localhost:8000
+```
+
+**Frontend** (in a second terminal)
+
+```bash
+cd frontend
+npm install
+npm run dev                                     # http://localhost:5173, proxies /api to :8000
+```
+
+**Checks**
+
+```bash
+cd backend && .venv/bin/pytest                  # backend tests
+cd frontend && npm run lint && npm run build    # lint, type-check and build
+```
+
+## Configuration
+
+The backend reads these environment variables. Each must be a positive integer, and the app refuses
+to start otherwise.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `MAX_FILE_SIZE_MB` | `50` | Largest single uploaded file |
+| `MAX_TOTAL_SIZE_MB` | `200` | Largest request body (checked before the upload is read) |
+| `MAX_FILES` | `20` | Most files in one request |
+| `MAX_IMAGE_PIXELS` | `100000000` | Largest image (width × height) for Image to PDF |
+| `MAX_CONCURRENT_COMPRESSIONS` | CPU count | Ghostscript jobs at once; extra requests get `503` |
+| `MAX_CONCURRENT_IMAGE_JOBS` | `min(CPU count, 4)` | Image conversions at once; extra requests get `503` |
+| `GS_TIMEOUT_SECONDS` | `120` | Time limit for one compression |
+| `GS_MEMORY_LIMIT_MB` | `2048` | Memory limit for one Ghostscript run |
+| `GS_BINARY` | `gs` | Ghostscript executable |
+| `ALLOWED_ORIGINS` | `http://localhost:5173` | Comma-separated CORS origins (only needed when the frontend runs on another origin) |
+
+If you change the size or file-count limits, update the matching constants in
+`frontend/src/fileItems.ts` (the frontend checks them before uploading) and `client_max_body_size`
+in `frontend/nginx.conf`.
+
+## API
+
+All endpoints take `multipart/form-data` and return the resulting PDF as a download. Errors return
+JSON `{"detail": "..."}` with status 400, 413, 422 or 503.
+
+| Endpoint | Fields | Result |
+|---|---|---|
+| `POST /api/merge` | `files` (2 or more PDFs, in order) | `merged.pdf` |
+| `POST /api/compress` | `file` (one PDF), `level` = `low` \| `medium` (default) \| `high` | `<name>_compressed.pdf`, plus `X-Original-Size` / `X-Compressed-Size` headers |
+| `POST /api/images-to-pdf` | `files` (1 or more JPEG/PNG, in order) | `images.pdf` |
+| `GET /api/health` | none | `{"status": "ok"}` |
+
+Example:
+
+```bash
+curl -F files=@a.pdf -F files=@b.pdf http://localhost:8000/api/merge -o merged.pdf
+```
+
+## Security notes
+
+- **Uploads are checked by content, not extension**, and are limited in size and count before they're processed.
+- **Ghostscript runs with `-dSAFER`**, plus memory and CPU limits, a timeout and a cap on concurrent jobs.
+- **Images are decoded only by Pillow's JPEG or PNG decoder**, with a pixel limit against decompression bombs.
+- **In Docker:**
+  - both containers run as non-root users;
+  - they have read-only filesystems and drop all Linux capabilities;
+  - the backend container has a 4 GB memory cap;
+  - nginx sends a strict Content-Security-Policy and other security headers.
+- **Owner-password restrictions are removed.** PDFs with only an owner password (print or copy restrictions) are
+  processed, and the result doesn't keep those restrictions. PDFs that need a password to open are rejected.
+
+## Project layout
+
+```
+backend/    FastAPI app (app/routers, app/services, app/utils), pytest suite, Dockerfile
+frontend/   React app (src/pages, src/components, src/api), nginx.conf, Dockerfile
+docker-compose.yml
+```
