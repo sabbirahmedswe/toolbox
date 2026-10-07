@@ -9,7 +9,7 @@ export default function MergePage() {
       accept={{ 'application/pdf': ['.pdf'] }}
       minFiles={2}
       title="Merge PDF files"
-      subtitle="Combine PDFs in the order you want. Drag files to reorder them."
+      subtitle="Combine several PDFs into one document, in exactly the order you choose."
       selectLabel="Select PDF files"
       hint="or drop PDFs here"
       addMoreLabel="Add more files"

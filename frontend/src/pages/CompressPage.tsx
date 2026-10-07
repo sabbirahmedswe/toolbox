@@ -101,8 +101,8 @@ export default function CompressPage() {
 
   return (
     <section className="tool-page">
-      <h1>Compress PDF file</h1>
-      <p className="subtitle">Reduce file size while keeping the best possible quality.</p>
+      <h1>Compress a PDF</h1>
+      <p className="subtitle">Shrink your PDF and choose how much quality to trade for a smaller file.</p>
 
       {!file ? (
         <FileDropzone

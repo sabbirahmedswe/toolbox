@@ -8,11 +8,12 @@ export default function ImagesToPdfPage() {
       fallbackName="images.pdf"
       accept={{ 'image/jpeg': ['.jpg', '.jpeg'], 'image/png': ['.png'] }}
       minFiles={1}
-      title="Image to PDF"
-      subtitle="Convert JPG and PNG images to PDF, one image per page. Drag images to reorder them."
+      title="Convert images to PDF"
+      subtitle="Turn JPG and PNG images into a single PDF, one image per page."
       selectLabel="Select images"
       hint="or drop JPG or PNG images here"
       addMoreLabel="Add more images"
+      reorderHint="Drag and drop the images to set the page order"
       actionLabel="Convert to PDF"
       busyLabel="Converting…"
       doneTitle="Your images have been converted to PDF!"
