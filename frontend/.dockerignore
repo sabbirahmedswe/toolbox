@@ -2,3 +2,5 @@ node_modules/
 dist/
 Dockerfile
 .dockerignore
+.env*
+*.local

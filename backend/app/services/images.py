@@ -7,10 +7,6 @@ from app import config
 from app.errors import ProcessingError
 from app.utils.files import JPEG, PNG
 
-# One pixel limit for both our check and Pillow's own decompression-bomb guard
-# (otherwise Pillow's ~89 MP default would apply first).
-Image.MAX_IMAGE_PIXELS = config.MAX_IMAGE_PIXELS
-
 # EXIF orientations img2pdf can apply losslessly (via the page's /Rotate); the rest are mirrored.
 _LOSSLESS_ORIENTATIONS = {1, 3, 6, 8}
 # Orientations that turn the image a quarter, swapping width and height.
@@ -84,6 +80,9 @@ def prepare_image(path: Path, kind: str, name: str, out_dir: Path) -> Path:
     Files img2pdf can embed directly are returned as-is (no re-encoding);
     everything else is normalised with Pillow first.
     """
+    # One pixel limit for both our check and Pillow's own decompression-bomb guard
+    # (otherwise Pillow's ~89 MP default would apply first). Set per call so config is read at request time.
+    Image.MAX_IMAGE_PIXELS = config.MAX_IMAGE_PIXELS
     try:
         with Image.open(path, formats=_FORMATS[kind]) as im:
             width, height = im.size

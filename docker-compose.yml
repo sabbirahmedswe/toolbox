@@ -2,17 +2,16 @@ services:
   backend:
     build: ./backend
     environment:
-      # Sized to fit mem_limit: at most 2 Ghostscript runs of 1 GB each, plus image jobs.
+      # Sized to fit mem_limit: at most 2 Ghostscript runs of 1 GB each, plus 2 image jobs.
       MAX_CONCURRENT_COMPRESSIONS: "2"
       GS_MEMORY_LIMIT_MB: "1024"
       MAX_CONCURRENT_IMAGE_JOBS: "2"
     mem_limit: 4g
-    # Bound to localhost only; the API docs are at http://localhost:8000/docs.
-    ports:
-      - "127.0.0.1:8000:8000"
+    # Not published: nginx in the frontend container is the only way in, so its limits always apply.
     read_only: true
-    tmpfs:
-      - /tmp:size=2g  # uploads and results are processed here
+    volumes:
+      # Uploads and results are processed here. On disk rather than tmpfs, which would count against mem_limit.
+      - backend-tmp:/tmp
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     restart: unless-stopped
@@ -30,3 +29,6 @@ services:
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     restart: unless-stopped
+
+volumes:
+  backend-tmp:

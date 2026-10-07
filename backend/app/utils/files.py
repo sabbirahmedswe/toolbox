@@ -1,5 +1,7 @@
 import shutil
 import tempfile
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import BinaryIO
 from urllib.parse import quote
@@ -32,6 +34,19 @@ def make_workdir() -> Path:
 
 def cleanup(path: Path) -> None:
     shutil.rmtree(path, ignore_errors=True)
+
+
+@asynccontextmanager
+async def workdir() -> AsyncIterator[Path]:
+    """A temp dir for one request, deleted on exit.
+
+    Cleaned up here rather than in a response BackgroundTask, which Starlette skips if the response is aborted.
+    """
+    path = make_workdir()
+    try:
+        yield path
+    finally:
+        await run_in_threadpool(cleanup, path)
 
 
 def check_file_count(files: list[UploadFile], minimum: int = 1) -> None:
@@ -82,3 +97,14 @@ async def save_upload(upload: UploadFile, dest: Path, allowed: tuple[str, ...]) 
     name = upload.filename or "file"
     kind = await run_in_threadpool(_copy_validated, upload.file, dest, name, allowed)
     return dest, kind
+
+
+async def save_uploads(
+    uploads: list[UploadFile], dest_dir: Path, allowed: tuple[str, ...], label: str = "file"
+) -> list[tuple[Path, str, str]]:
+    """Save each upload as `dest_dir/<index>`. Returns (path, kind, display name) in upload order."""
+    saved = []
+    for i, upload in enumerate(uploads):
+        path, kind = await save_upload(upload, dest_dir / str(i), allowed)
+        saved.append((path, kind, upload.filename or f"{label} {i + 1}"))
+    return saved

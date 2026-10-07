@@ -210,10 +210,12 @@ def test_mirrored_cmyk_jpeg_stays_cmyk(client):
     assert page_image(res.content).mode == "CMYK"
 
 
-def test_pillow_uses_configured_pixel_limit():
+def test_pillow_uses_configured_pixel_limit(client, monkeypatch):
     from app.services import images
 
-    assert images.Image.MAX_IMAGE_PIXELS == config.MAX_IMAGE_PIXELS
+    monkeypatch.setattr(config, "MAX_IMAGE_PIXELS", 123_456_789)
+    assert client.post("/api/images-to-pdf", files=[jpeg("a.jpg", make_image())]).status_code == 200
+    assert images.Image.MAX_IMAGE_PIXELS == 123_456_789
 
 
 @pytest.mark.parametrize(
@@ -243,6 +245,6 @@ def test_busy_check_happens_before_upload_is_saved(client, monkeypatch):
         raise AssertionError("upload should not be saved when the server is busy")
 
     monkeypatch.setattr(config, "MAX_CONCURRENT_IMAGE_JOBS", 0)
-    monkeypatch.setattr(images, "save_upload", fail)
+    monkeypatch.setattr(images, "save_uploads", fail)
     res = client.post("/api/images-to-pdf", files=[jpeg("a.jpg", make_image())])
     assert res.status_code == 503

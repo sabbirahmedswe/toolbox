@@ -5,7 +5,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from app import config
 from app.services.compress import GhostscriptMissing, Level, compress_pdf
-from app.utils.files import PDF, attachment, cleanup, make_workdir, save_upload
+from app.utils.files import PDF, attachment, save_upload, workdir
 from app.utils.limits import JobLimiter
 
 router = APIRouter()
@@ -32,20 +32,15 @@ async def compress(
 ):
     name = file.filename or "document.pdf"
     limiter.check()
-    workdir = make_workdir()
-    try:
-        src, _ = await save_upload(file, workdir / "in.pdf", (PDF,))
+    async with workdir() as tmp:
+        src, _ = await save_upload(file, tmp / "in.pdf", (PDF,))
         async with limiter.slot():
             try:
-                result, _ = await run_in_threadpool(compress_pdf, src, workdir / "out.pdf", level, name)
+                result, _ = await run_in_threadpool(compress_pdf, src, tmp / "out.pdf", level, name)
             except GhostscriptMissing:
                 raise HTTPException(503, "Compression is unavailable: Ghostscript is not installed on the server.")
         original_size = src.stat().st_size
         data = await run_in_threadpool(result.read_bytes)
-    finally:
-        # Cleaned up here rather than in a response BackgroundTask, which
-        # Starlette skips if the response is aborted.
-        await run_in_threadpool(cleanup, workdir)
     return Response(
         data,
         media_type="application/pdf",

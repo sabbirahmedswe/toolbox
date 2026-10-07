@@ -3,7 +3,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from app import config
 from app.services.images import images_to_pdf
-from app.utils.files import JPEG, PNG, attachment, check_file_count, cleanup, make_workdir, save_upload
+from app.utils.files import JPEG, PNG, attachment, check_file_count, save_uploads, workdir
 from app.utils.limits import JobLimiter
 
 router = APIRouter()
@@ -20,18 +20,10 @@ limiter = JobLimiter(lambda: config.MAX_CONCURRENT_IMAGE_JOBS)
 async def images_to_pdf_route(files: list[UploadFile] = File(..., description="One or more JPEG or PNG images")):
     check_file_count(files, minimum=1)
     limiter.check()
-    workdir = make_workdir()
-    try:
-        inputs = []
-        for i, upload in enumerate(files):
-            path, kind = await save_upload(upload, workdir / f"{i}", (JPEG, PNG))
-            inputs.append((path, kind, upload.filename or f"image {i + 1}"))
+    async with workdir() as tmp:
+        inputs = await save_uploads(files, tmp, (JPEG, PNG), label="image")
         async with limiter.slot():
-            pdf = await run_in_threadpool(images_to_pdf, inputs, workdir)
-    finally:
-        # Cleaned up here rather than in a response BackgroundTask, which
-        # Starlette skips if the response is aborted.
-        await run_in_threadpool(cleanup, workdir)
+            pdf = await run_in_threadpool(images_to_pdf, inputs, tmp)
     return Response(
         pdf,
         media_type="application/pdf",

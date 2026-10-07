@@ -19,12 +19,14 @@ Requires Docker with Compose v2.
 docker compose up --build
 ```
 
-- App: http://localhost:8080
-- API docs (Swagger): http://localhost:8000/docs
+- App and API: http://localhost:8080 (the API is under `/api/`)
 
-Both ports are bound to `127.0.0.1`, so the app is only reachable from this machine. To expose it on
-your network, change the `ports` entries in `docker-compose.yml`. The app has no authentication, so
-only do this on a network you trust.
+The port is bound to `127.0.0.1`, so the app is only reachable from this machine. The backend isn't
+published at all; nginx in the frontend container is the only way in. To expose the app on your
+network, change the `ports` entry in `docker-compose.yml`. The app has no authentication, so only do
+this on a network you trust.
+
+The interactive API docs (Swagger) are available when running locally, at http://localhost:8000/docs.
 
 Rebuild regularly (`docker compose build --pull`) to pick up security fixes for Ghostscript and the base images.
 
@@ -93,8 +95,10 @@ JSON `{"detail": "..."}` with status 400, 413, 422 or 503.
 Example:
 
 ```bash
-curl -F files=@a.pdf -F files=@b.pdf http://localhost:8000/api/merge -o merged.pdf
+curl -F files=@a.pdf -F files=@b.pdf http://localhost:8080/api/merge -o merged.pdf
 ```
+
+(Use port 8000 when running the backend locally.)
 
 ## Security notes
 
@@ -104,7 +108,7 @@ curl -F files=@a.pdf -F files=@b.pdf http://localhost:8000/api/merge -o merged.p
 - **In Docker:**
   - both containers run as non-root users;
   - they have read-only filesystems and drop all Linux capabilities;
-  - the backend container has a 4 GB memory cap;
+  - the backend container has a 4 GB memory cap, and its `/tmp` is a disk volume so uploads don't count against it;
   - nginx sends a strict Content-Security-Policy and other security headers.
 - **Owner-password restrictions are removed.** PDFs with only an owner password (print or copy restrictions) are
   processed, and the result doesn't keep those restrictions. PDFs that need a password to open are rejected.

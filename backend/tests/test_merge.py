@@ -116,3 +116,24 @@ def test_merge_cleans_up_temp_files(client, leftover_workdirs):
     client.post("/api/merge", files=[pdf_upload("a.pdf", make_pdf([100])), pdf_upload("x.pdf", b"%PDF-1.7 junk")])
     client.post("/api/merge", files=[pdf_upload("a.pdf", make_pdf([100])), ("files", ("x.txt", b"hi", "text/plain"))])
     assert leftover_workdirs() == set()
+
+
+def test_merge_reports_damage_found_while_copying(client, monkeypatch):
+    def broken_append(self, *args, **kwargs):
+        raise KeyError("/Resources")
+
+    monkeypatch.setattr("app.services.merge.PdfWriter.append", broken_append)
+    res = client.post("/api/merge", files=[pdf_upload("a.pdf", make_pdf([100])), pdf_upload("b.pdf", make_pdf([200]))])
+    assert res.status_code == 400
+    assert '"a.pdf"' in res.json()["detail"]
+
+
+def test_merge_reports_damage_found_while_writing(client, monkeypatch):
+    def broken_write(self, *args, **kwargs):
+        raise KeyError("/Length")
+
+    files = [pdf_upload("a.pdf", make_pdf([100])), pdf_upload("b.pdf", make_pdf([200]))]  # built before patching
+    monkeypatch.setattr("app.services.merge.PdfWriter.write", broken_write)
+    res = client.post("/api/merge", files=files)
+    assert res.status_code == 400
+    assert "damaged" in res.json()["detail"]

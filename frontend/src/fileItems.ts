@@ -4,6 +4,8 @@ import { formatBytes } from './api/client'
 export const MAX_FILES = 20
 export const MAX_FILE_SIZE = 50 * 1024 * 1024
 export const MAX_TOTAL_SIZE = 200 * 1024 * 1024
+// The backend limits the whole request body, which adds multipart boundaries and part headers to the files.
+const MULTIPART_HEADROOM = 1024 * 1024
 
 export interface FileItem {
   id: string
@@ -32,7 +34,7 @@ export function addWithinLimits(existing: FileItem[], incoming: File[]): { items
       problems.push(`"${file.name}" is larger than ${formatBytes(MAX_FILE_SIZE)}.`)
       continue
     }
-    if (total + file.size > MAX_TOTAL_SIZE) {
+    if (total + file.size > MAX_TOTAL_SIZE - MULTIPART_HEADROOM) {
       problems.push(`"${file.name}" would exceed the ${formatBytes(MAX_TOTAL_SIZE)} total limit.`)
       continue
     }
