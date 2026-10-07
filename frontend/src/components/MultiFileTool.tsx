@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import type { Accept } from 'react-dropzone'
 import { downloadBlob, postForFile, type FileResult } from '../api/client'
 import { addWithinLimits, type FileItem } from '../fileItems'
+import BtnIcon from './BtnIcon'
 import FileDropzone from './FileDropzone'
 import SortableFileList from './SortableFileList'
 
@@ -67,10 +68,11 @@ export default function MultiFileTool(props: Props) {
         <h1>{props.doneTitle}</h1>
         <p className="subtitle">The download should start automatically.</p>
         <div className="actions">
-          <button className="btn" onClick={() => downloadBlob(result.blob, result.filename)}>
+          <button className="btn btn-large" onClick={() => downloadBlob(result.blob, result.filename)}>
             {props.downloadLabel}
+            <BtnIcon kind="download" />
           </button>
-          <button className="btn btn-secondary" onClick={reset}>
+          <button className="btn btn-large btn-secondary" onClick={reset}>
             {props.againLabel}
           </button>
         </div>
@@ -104,13 +106,7 @@ export default function MultiFileTool(props: Props) {
           <div className="actions">
             <button className="btn btn-large" onClick={submit} disabled={busy || tooFew}>
               {busy ? props.busyLabel : props.actionLabel}
-              {!busy && (
-                <span className="btn-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M5 12h14M13 6l6 6-6 6" />
-                  </svg>
-                </span>
-              )}
+              {!busy && <BtnIcon kind="next" />}
             </button>
           </div>
           {tooFew && props.minFilesHint && <p className="muted">{props.minFilesHint}</p>}

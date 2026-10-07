@@ -212,7 +212,8 @@ h1, h2, h3 { margin: 0; }
   fill: none; stroke: currentColor; stroke-width: 2.75; stroke-linecap: round; stroke-linejoin: round;
   transition: transform 0.15s;
 }
-.btn:hover:not(:disabled) .btn-icon svg { transform: translateX(2px); }
+.btn:hover:not(:disabled) .btn-icon-next svg { transform: translateX(2px); }
+.btn:hover:not(:disabled) .btn-icon-download svg { transform: translateY(2px); }
 .btn-small { padding: 0.45rem 1rem; font-size: 0.9rem; }
 
 .selected-file {

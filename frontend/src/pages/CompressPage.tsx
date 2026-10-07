@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { downloadBlob, formatBytes, postForFile, type FileResult } from '../api/client'
+import BtnIcon from '../components/BtnIcon'
 import FileDropzone from '../components/FileDropzone'
 import { addWithinLimits } from '../fileItems'
 
@@ -88,10 +89,11 @@ export default function CompressPage() {
           </div>
         </div>
         <div className="actions">
-          <button className="btn" onClick={() => downloadBlob(result.blob, result.filename)}>
+          <button className="btn btn-large" onClick={() => downloadBlob(result.blob, result.filename)}>
             Download compressed PDF
+            <BtnIcon kind="download" />
           </button>
-          <button className="btn btn-secondary" onClick={reset}>
+          <button className="btn btn-large btn-secondary" onClick={reset}>
             Compress another file
           </button>
         </div>
@@ -148,8 +150,9 @@ export default function CompressPage() {
           </fieldset>
 
           <div className="actions">
-            <button className="btn" onClick={compress} disabled={busy}>
+            <button className="btn btn-large" onClick={compress} disabled={busy}>
               {busy ? 'Compressing…' : 'Compress PDF'}
+              {!busy && <BtnIcon kind="next" />}
             </button>
           </div>
         </>
