@@ -31,3 +31,7 @@ GS_TIMEOUT_SECONDS = _int_env("GS_TIMEOUT_SECONDS", 120)
 GS_MEMORY_LIMIT_MB = _int_env("GS_MEMORY_LIMIT_MB", 2048)
 # Ghostscript is single-threaded, so by default allow one job per CPU.
 MAX_CONCURRENT_COMPRESSIONS = _int_env("MAX_CONCURRENT_COMPRESSIONS", os.cpu_count() or 2)
+# Image -> PDF: largest image accepted (width x height), a guard against decompression bombs.
+MAX_IMAGE_PIXELS = _int_env("MAX_IMAGE_PIXELS", 100_000_000)
+# Each job may hold a few full-size decoded copies of a large image, so keep this small.
+MAX_CONCURRENT_IMAGE_JOBS = _int_env("MAX_CONCURRENT_IMAGE_JOBS", min(os.cpu_count() or 2, 4))

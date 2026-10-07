@@ -1,5 +1,4 @@
 import { Link, Route, Routes } from 'react-router-dom'
-import ComingSoon from './pages/ComingSoon'
 import Home from './pages/Home'
 import { TOOLS } from './tools'
 
@@ -22,7 +21,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           {TOOLS.map((t) => (
-            <Route key={t.path} path={t.path} element={t.page ?? <ComingSoon tool={t} />} />
+            <Route key={t.path} path={t.path} element={t.page} />
           ))}
         </Routes>
       </main>

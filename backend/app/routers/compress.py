@@ -6,11 +6,11 @@ from fastapi.concurrency import run_in_threadpool
 from app import config
 from app.services.compress import GhostscriptMissing, Level, compress_pdf
 from app.utils.files import PDF, attachment, cleanup, make_workdir, save_upload
+from app.utils.limits import JobLimiter
 
 router = APIRouter()
 
-# Ghostscript jobs currently running. Only touched from the event loop, so no lock is needed.
-_active_jobs = 0
+limiter = JobLimiter(lambda: config.MAX_CONCURRENT_COMPRESSIONS)
 
 
 def output_name(upload_name: str) -> str:
@@ -30,20 +30,16 @@ async def compress(
     file: UploadFile = File(..., description="The PDF to compress"),
     level: Level = Form("medium", description="low = best quality, high = smallest file"),
 ):
-    global _active_jobs
     name = file.filename or "document.pdf"
+    limiter.check()
     workdir = make_workdir()
     try:
         src, _ = await save_upload(file, workdir / "in.pdf", (PDF,))
-        if _active_jobs >= config.MAX_CONCURRENT_COMPRESSIONS:
-            raise HTTPException(503, "The server is busy compressing other files. Please try again in a moment.")
-        _active_jobs += 1
-        try:
-            result, _ = await run_in_threadpool(compress_pdf, src, workdir / "out.pdf", level, name)
-        except GhostscriptMissing:
-            raise HTTPException(503, "Compression is unavailable: Ghostscript is not installed on the server.")
-        finally:
-            _active_jobs -= 1
+        async with limiter.slot():
+            try:
+                result, _ = await run_in_threadpool(compress_pdf, src, workdir / "out.pdf", level, name)
+            except GhostscriptMissing:
+                raise HTTPException(503, "Compression is unavailable: Ghostscript is not installed on the server.")
         original_size = src.stat().st_size
         data = await run_in_threadpool(result.read_bytes)
     finally:

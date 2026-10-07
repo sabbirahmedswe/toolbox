@@ -156,3 +156,15 @@ def test_ghostscript_memory_limit_enforced(client, image_pdf, monkeypatch):
     res = client.post("/api/compress", files=pdf_upload("a.pdf", image_pdf))
     assert res.status_code == 400
     assert "could not be compressed" in res.json()["detail"]
+
+
+def test_busy_check_happens_before_upload_is_saved(client, monkeypatch):
+    from app.routers import compress
+
+    async def fail(*args, **kwargs):
+        raise AssertionError("upload should not be saved when the server is busy")
+
+    monkeypatch.setattr(config, "MAX_CONCURRENT_COMPRESSIONS", 0)
+    monkeypatch.setattr(compress, "save_upload", fail)
+    res = client.post("/api/compress", files=pdf_upload("a.pdf", make_pdf([100])))
+    assert res.status_code == 503

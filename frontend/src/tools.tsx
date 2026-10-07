@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import CompressPage from './pages/CompressPage'
+import ImagesToPdfPage from './pages/ImagesToPdfPage'
 import MergePage from './pages/MergePage'
 
 export interface Tool {
@@ -7,8 +8,7 @@ export interface Tool {
   title: string
   description: string
   icon: string
-  /** The tool's page; tools without one show a "Coming soon" placeholder. */
-  page?: ReactElement
+  page: ReactElement
 }
 
 export const TOOLS: Tool[] = [
@@ -28,8 +28,9 @@ export const TOOLS: Tool[] = [
   },
   {
     path: '/images-to-pdf',
-    title: 'JPG to PDF',
+    title: 'Image to PDF',
     description: 'Convert JPG and PNG images into a single PDF document.',
     icon: '▣',
+    page: <ImagesToPdfPage />,
   },
 ]
