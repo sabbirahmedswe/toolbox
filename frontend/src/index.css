@@ -27,8 +27,11 @@ h1, h2, h3 { margin: 0; }
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
 }
-.logo { font-weight: 800; font-size: 1.4rem; letter-spacing: -0.5px; }
-.logo span { color: var(--accent); }
+.logo {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-weight: 400; font-size: 1.7rem; letter-spacing: -0.01em; line-height: 1;
+  color: var(--text);
+}
 .header nav { display: flex; gap: 1.25rem; flex-wrap: wrap; }
 .header nav a { font-weight: 600; font-size: 0.9rem; text-transform: uppercase; color: var(--muted); }
 .header nav a:hover { color: var(--accent); }

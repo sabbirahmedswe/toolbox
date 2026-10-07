@@ -1,4 +1,4 @@
-# iLovePDF Tool
+# <img src="frontend/public/favicon.svg" alt="" width="32" height="32" align="top"> Toolbox
 
 A small, local, iLovePDF-style web app for working with PDFs:
 

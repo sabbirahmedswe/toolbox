@@ -7,7 +7,7 @@ export default function App() {
     <div className="app">
       <header className="header">
         <Link to="/" className="logo">
-          I<span>♥</span>PDF
+          Toolbox
         </Link>
         <nav>
           {TOOLS.map((t) => (

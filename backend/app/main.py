@@ -25,7 +25,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="iLovePDF Tool", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Toolbox", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(RequestSizeLimitMiddleware)
 # Added last so it's outermost: error responses from the size limit still get CORS headers.
