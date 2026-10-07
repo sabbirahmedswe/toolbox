@@ -13,6 +13,7 @@ export default function MergePage() {
       hint="or drop PDFs here"
       addMoreLabel="Add more files"
       minFilesHint="Add at least 2 PDFs to merge."
+      reorderHint="Drag and drop the files to set the merge order"
       actionLabel="Merge PDF"
       busyLabel="Merging…"
       doneTitle="Your PDFs have been merged!"

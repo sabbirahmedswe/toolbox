@@ -16,6 +16,8 @@ interface Props {
   hint: string
   addMoreLabel: string
   minFilesHint?: string
+  /** Shown above the file list once there are at least two files to reorder. */
+  reorderHint?: string
   actionLabel: string
   busyLabel: string
   doneTitle: string
@@ -87,13 +89,28 @@ export default function MultiFileTool(props: Props) {
         <FileDropzone accept={props.accept} onFiles={addFiles} onReject={setError} label={props.selectLabel} hint={props.hint} />
       ) : (
         <>
+          {props.reorderHint && items.length > 1 && !busy && (
+            <p className="reorder-hint">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4" />
+              </svg>
+              {props.reorderHint}
+            </p>
+          )}
           <SortableFileList items={items} onChange={setItems} disabled={busy} renderPreview={props.renderPreview} />
           {!busy && (
             <FileDropzone accept={props.accept} onFiles={addFiles} onReject={setError} label={props.addMoreLabel} compact />
           )}
           <div className="actions">
-            <button className="btn" onClick={submit} disabled={busy || tooFew}>
+            <button className="btn btn-large" onClick={submit} disabled={busy || tooFew}>
               {busy ? props.busyLabel : props.actionLabel}
+              {!busy && (
+                <span className="btn-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </span>
+              )}
             </button>
           </div>
           {tooFew && props.minFilesHint && <p className="muted">{props.minFilesHint}</p>}
