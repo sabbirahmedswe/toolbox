@@ -2,6 +2,7 @@ import shutil
 import tempfile
 from pathlib import Path
 from typing import BinaryIO
+from urllib.parse import quote
 
 from fastapi import HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
@@ -17,6 +18,12 @@ JPEG = "jpeg"
 PNG = "png"
 
 _LABELS = {PDF: "PDF", JPEG: "JPEG", PNG: "PNG"}
+
+
+def attachment(filename: str) -> str:
+    """Content-Disposition value with an ASCII fallback plus the UTF-8 name (RFC 6266)."""
+    fallback = "".join(c if c.isascii() and c.isprintable() and c not in '"\\' else "_" for c in filename)
+    return f"attachment; filename=\"{fallback}\"; filename*=UTF-8''{quote(filename, safe='')}"
 
 
 def make_workdir() -> Path:

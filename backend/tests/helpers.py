@@ -13,3 +13,14 @@ def make_pdf(widths: list[int], height: int = 100, password: str | None = None) 
     buf = io.BytesIO()
     writer.write(buf)
     return buf.getvalue()
+
+
+def make_image_pdf(pages: int = 1, size: int = 1600) -> bytes:
+    """Build a PDF of high-resolution noisy photos: large, and shrinkable by Ghostscript."""
+    from PIL import Image
+
+    images = [Image.effect_noise((size, size), 64).convert("RGB") for _ in range(pages)]
+    buf = io.BytesIO()
+    # 600 dpi, above every preset's target (/printer is 300 dpi), so all levels downsample.
+    images[0].save(buf, "PDF", save_all=True, append_images=images[1:], resolution=600, quality=95)
+    return buf.getvalue()

@@ -27,9 +27,21 @@ export async function postForFile(url: string, form: FormData, fallbackName: str
     throw new ApiError(message)
   }
 
-  const disposition = res.headers.get('Content-Disposition') ?? ''
-  const match = /filename="?([^";]+)"?/.exec(disposition)
-  return { blob: await res.blob(), filename: match?.[1] ?? fallbackName, headers: res.headers }
+  const filename = filenameFromDisposition(res.headers.get('Content-Disposition') ?? '') ?? fallbackName
+  return { blob: await res.blob(), filename, headers: res.headers }
+}
+
+/** Prefer the UTF-8 `filename*` (RFC 6266) and fall back to the plain `filename`. */
+function filenameFromDisposition(disposition: string): string | null {
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition)
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded[1])
+    } catch {
+      // malformed encoding; fall through to the plain name
+    }
+  }
+  return /filename="?([^";]+)"?/i.exec(disposition)?.[1] ?? null
 }
 
 export function downloadBlob(blob: Blob, filename: string) {

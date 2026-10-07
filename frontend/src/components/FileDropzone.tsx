@@ -18,6 +18,10 @@ export default function FileDropzone({ accept, multiple = true, onFiles, onRejec
     onDrop: (accepted: File[], rejected: FileRejection[]) => {
       if (accepted.length) onFiles(accepted)
       if (rejected.length && onReject) {
+        if (rejected.some((r) => r.errors.some((e) => e.code === 'too-many-files'))) {
+          onReject('Please select only one file.')
+          return
+        }
         const names = rejected.map((r) => r.file.name).join(', ')
         onReject(`Unsupported file${rejected.length > 1 ? 's' : ''}: ${names}`)
       }

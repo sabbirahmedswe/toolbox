@@ -1,3 +1,6 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -5,9 +8,24 @@ from fastapi.responses import JSONResponse
 from app import config
 from app.errors import ProcessingError
 from app.middleware import RequestSizeLimitMiddleware
-from app.routers import merge
+from app.routers import compress, merge
+from app.services.compress import ghostscript_version
 
-app = FastAPI(title="iLovePDF Tool", version="0.1.0")
+logger = logging.getLogger("uvicorn.error")
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    version = ghostscript_version()
+    if version:
+        # Ghostscript has a history of -dSAFER bypasses; keep it patched.
+        logger.info("Using Ghostscript %s (%s); keep it up to date.", version, config.GS_BINARY)
+    else:
+        logger.warning("Ghostscript (%s) not found: PDF compression is unavailable.", config.GS_BINARY)
+    yield
+
+
+app = FastAPI(title="iLovePDF Tool", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(RequestSizeLimitMiddleware)
 # Added last so it's outermost: error responses from the size limit still get CORS headers.
@@ -26,6 +44,7 @@ async def processing_error_handler(_: Request, exc: ProcessingError) -> JSONResp
 
 
 app.include_router(merge.router, prefix="/api", tags=["merge"])
+app.include_router(compress.router, prefix="/api", tags=["compress"])
 
 
 @app.get("/api/health")

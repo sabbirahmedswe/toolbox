@@ -2,7 +2,7 @@ from fastapi import APIRouter, File, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
 from app.services.merge import merge_pdfs
-from app.utils.files import PDF, check_file_count, cleanup, make_workdir, save_upload
+from app.utils.files import PDF, attachment, check_file_count, cleanup, make_workdir, save_upload
 
 router = APIRouter()
 
@@ -29,5 +29,5 @@ async def merge(files: list[UploadFile] = File(..., description="Two or more PDF
     return Response(
         merged,
         media_type="application/pdf",
-        headers={"Content-Disposition": 'attachment; filename="merged.pdf"'},
+        headers={"Content-Disposition": attachment("merged.pdf")},
     )

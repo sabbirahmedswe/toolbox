@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import CompressPage from './pages/CompressPage'
 import MergePage from './pages/MergePage'
 
 export interface Tool {
@@ -23,6 +24,7 @@ export const TOOLS: Tool[] = [
     title: 'Compress PDF',
     description: 'Reduce file size while keeping the best possible quality.',
     icon: '⇲',
+    page: <CompressPage />,
   },
   {
     path: '/images-to-pdf',
