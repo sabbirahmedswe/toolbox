@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { downloadBlob, formatBytes, postForFile, type FileResult } from '../api/client'
 import BtnIcon from '../components/BtnIcon'
+import FileCard from '../components/FileCard'
 import FileDropzone from '../components/FileDropzone'
-import FilePanel from '../components/FilePanel'
+import PdfThumb from '../components/PdfThumb'
+import PdfZoom from '../components/PdfZoom'
 import ToolSidebar from '../components/ToolSidebar'
 import { addWithinLimits } from '../fileItems'
 
@@ -28,6 +30,7 @@ export default function CompressPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
+  const [zoomed, setZoomed] = useState(false)
 
   function selectFile(files: File[]) {
     const next = addWithinLimits([], files.slice(0, 1))
@@ -57,6 +60,7 @@ export default function CompressPage() {
 
   function reset() {
     setFile(null)
+    setZoomed(false)
     setOutcome(null)
     setError(null)
   }
@@ -127,11 +131,17 @@ export default function CompressPage() {
   return (
     <section className="workspace">
       <div className="workspace-main">
-        <FilePanel file={file} onRemove={busy ? undefined : reset} />
+        <FileCard
+          file={file}
+          preview={<PdfThumb file={file} />}
+          onZoom={busy ? undefined : () => setZoomed(true)}
+          onRemove={busy ? undefined : reset}
+        />
+        {zoomed && <PdfZoom file={file} onClose={() => setZoomed(false)} />}
       </div>
 
       <ToolSidebar
-        title="Compress"
+        title="Compression level"
         action={
           <button className="btn btn-large" onClick={compress} disabled={busy}>
             {busy ? 'Compressing…' : 'Compress PDF'}
@@ -140,7 +150,7 @@ export default function CompressPage() {
         }
       >
         <fieldset className="choices choices-stacked" disabled={busy}>
-          <legend>Compression level</legend>
+          <legend className="sr-only">Compression level</legend>
           {LEVELS.map((l) => (
             <label key={l.value} className={`choice${level === l.value ? ' choice-selected' : ''}`}>
               <input

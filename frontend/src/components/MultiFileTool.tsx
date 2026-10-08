@@ -28,6 +28,8 @@ interface Props {
   downloadLabel: string
   againLabel: string
   renderPreview?: (item: FileItem) => ReactNode
+  /** Adds a zoom button to each card; see SortableFileList. */
+  renderZoom?: (item: FileItem, onClose: () => void) => ReactNode
   /** Shows a button that sorts the files by name. */
   sortByName?: boolean
 }
@@ -147,7 +149,13 @@ export default function MultiFileTool(props: Props) {
           </div>
         )}
         <div className="workspace-files">
-          <SortableFileList items={items} onChange={setItems} disabled={busy} renderPreview={props.renderPreview} />
+          <SortableFileList
+            items={items}
+            onChange={setItems}
+            disabled={busy}
+            renderPreview={props.renderPreview}
+            renderZoom={props.renderZoom}
+          />
         </div>
       </div>
 

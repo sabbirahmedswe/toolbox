@@ -1,5 +1,6 @@
 import MultiFileTool from '../components/MultiFileTool'
 import PdfThumb from '../components/PdfThumb'
+import PdfZoom from '../components/PdfZoom'
 
 export default function MergePage() {
   return (
@@ -23,6 +24,7 @@ export default function MergePage() {
       againLabel="Merge more files"
       sortByName
       renderPreview={(item) => <PdfThumb file={item.file} />}
+      renderZoom={(item, onClose) => <PdfZoom file={item.file} onClose={onClose} />}
     />
   )
 }

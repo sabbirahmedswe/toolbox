@@ -15,17 +15,23 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { FileItem } from '../fileItems'
+import { FileCardBody } from './FileCard'
 
 interface Props {
   items: FileItem[]
   onChange: (items: FileItem[]) => void
   renderPreview?: (item: FileItem) => ReactNode
+  /** Adds a zoom button to each card; renders the enlarged view, which calls `onClose` when dismissed. */
+  renderZoom?: (item: FileItem, onClose: () => void) => ReactNode
   disabled?: boolean
 }
 
-export default function SortableFileList({ items, onChange, renderPreview, disabled }: Props) {
+export default function SortableFileList({ items, onChange, renderPreview, renderZoom, disabled }: Props) {
+  const [zoomedId, setZoomedId] = useState<string | null>(null)
+  const zoomed = items.find((i) => i.id === zoomedId)
+
   const sensors = useSensors(
     // A small drag threshold lets clicks on the remove button through.
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -43,31 +49,33 @@ export default function SortableFileList({ items, onChange, renderPreview, disab
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={items} strategy={rectSortingStrategy} disabled={disabled}>
         <ol className="file-grid">
-          {items.map((item, index) => (
+          {items.map((item) => (
             <SortableFile
               key={item.id}
               item={item}
-              index={index}
               preview={renderPreview?.(item)}
               disabled={disabled}
+              onZoom={renderZoom && (() => setZoomedId(item.id))}
               onRemove={() => onChange(items.filter((i) => i.id !== item.id))}
             />
           ))}
         </ol>
       </SortableContext>
+      {/* Outside the cards, so pointer presses in the zoomed view don't start dragging one. */}
+      {zoomed && renderZoom?.(zoomed, () => setZoomedId(null))}
     </DndContext>
   )
 }
 
 interface SortableFileProps {
   item: FileItem
-  index: number
   preview?: ReactNode
   disabled?: boolean
+  onZoom?: () => void
   onRemove: () => void
 }
 
-function SortableFile({ item, index, preview, disabled, onRemove }: SortableFileProps) {
+function SortableFile({ item, preview, disabled, onZoom, onRemove }: SortableFileProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id })
 
   return (
@@ -78,22 +86,12 @@ function SortableFile({ item, index, preview, disabled, onRemove }: SortableFile
       {...attributes}
       {...listeners}
     >
-      <span className="file-index">{index + 1}</span>
-      {!disabled && (
-        <button
-          type="button"
-          className="file-remove"
-          aria-label={`Remove ${item.file.name}`}
-          onClick={onRemove}
-          onKeyDown={(e) => e.stopPropagation()}
-        >
-          ×
-        </button>
-      )}
-      <div className="file-preview">{preview ?? <span className="file-badge">PDF</span>}</div>
-      <div className="file-card-name" title={item.file.name}>
-        {item.file.name}
-      </div>
+      <FileCardBody
+        file={item.file}
+        preview={preview ?? <span className="file-badge">PDF</span>}
+        onZoom={disabled ? undefined : onZoom}
+        onRemove={disabled ? undefined : onRemove}
+      />
     </li>
   )
 }

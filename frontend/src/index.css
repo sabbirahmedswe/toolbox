@@ -4,9 +4,11 @@
   --text: #33333b;
   --nav-text: #222228;
   --muted: #707078;
+  --text-secondary: #55555d;
   --border: #e3e3ea;
   --accent: #e5322d;
   --accent-hover: #c8241f;
+  --accent-soft: #fff7f7;
   --info: #1d5fa8;
   --info-bg: #eaf3fd;
   --info-border: #c4dcf5;
@@ -144,7 +146,7 @@ h1, h2, h3 { margin: 0; }
 }
 /* Spacing via margin, not flex gap: react-dropzone's hidden input stays in flow and would take a gap. */
 .dropzone p { margin: 0.75rem 0 0; }
-.dropzone:hover, .dropzone-active { border-color: var(--accent); background: #fff7f7; }
+.dropzone:hover, .dropzone-active { border-color: var(--accent); background: var(--accent-soft); }
 
 .file-grid {
   list-style: none; margin: 0; padding: 0;
@@ -157,22 +159,50 @@ h1, h2, h3 { margin: 0; }
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .file-card:hover { border-color: var(--accent); box-shadow: 0 4px 14px rgb(0 0 0 / 0.08); }
+.file-card-static { cursor: default; touch-action: auto; user-select: auto; }
 .file-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .file-card.file-card-dragging {
   cursor: grabbing; z-index: 1; box-shadow: 0 10px 28px rgb(0 0 0 / 0.15);
   border-color: var(--accent); border-style: dashed;
 }
-.file-index {
-  position: absolute; top: 0.5rem; left: 0.5rem; min-width: 1.5rem; height: 1.5rem;
-  display: grid; place-items: center; border-radius: 999px;
-  background: var(--bg); color: var(--muted); font-size: 0.75rem; font-weight: 700;
+/* A card's zoom and remove buttons, side by side in its top-right corner. */
+.file-card-actions { position: absolute; top: 0.4rem; right: 0.4rem; display: flex; gap: 0.45rem; }
+/* A small round button holding an SVG icon. */
+.icon-btn {
+  border: none; border-radius: 999px; background: var(--bg); color: var(--muted); cursor: pointer;
 }
-.file-remove {
-  position: absolute; top: 0.4rem; right: 0.4rem; width: 1.6rem; height: 1.6rem;
-  border: none; border-radius: 999px; background: var(--bg); color: var(--muted);
-  font-size: 1.1rem; line-height: 1; cursor: pointer;
+.icon-btn:hover { background: var(--accent); color: #fff; }
+.icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.icon-btn svg { display: block; width: 100%; height: 100%; }
+.file-card-action { position: relative; width: 1.75rem; height: 1.75rem; padding: 0.2rem; }
+/* Above a card's corner button, shown at once on hover or keyboard focus (like .fab-tooltip). */
+.card-tooltip {
+  position: absolute; bottom: calc(100% + 0.45rem); left: 50%; transform: translateX(-50%);
+  padding: 0.3rem 0.6rem; border-radius: 6px; background: var(--nav-text); color: #fff;
+  font-size: 0.75rem; font-weight: 600; line-height: 1.2; white-space: nowrap; pointer-events: none;
+  opacity: 0; visibility: hidden; transition: opacity 0.12s;
 }
-.file-remove:hover { background: var(--accent); color: #fff; }
+.file-card-action:is(:hover, :focus-visible) .card-tooltip { opacity: 1; visibility: visible; }
+/* The buttons appear on hover, or while one has focus (also after a mouse click, e.g. when the zoom closes and
+   focus returns, so a focused button is never invisible). Until then they can't be clicked either, so a stray
+   click can't remove the file. Touch screens can't hover, so they always show there. */
+@media (hover: hover) {
+  .file-card-actions { opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+  .file-card:hover .file-card-actions, .file-card-actions:focus-within { opacity: 1; pointer-events: auto; }
+}
+
+/* The enlarged first page, centred over a dimmed page with room above and below; PdfZoom sizes the page. */
+.pdf-zoom {
+  max-width: calc(100vw - 2rem); padding: 2.75rem 1rem 1rem;
+  border: none; border-radius: var(--radius); background: var(--surface); box-shadow: 0 20px 60px rgb(0 0 0 / 0.3);
+}
+.pdf-zoom::backdrop { background: rgb(20 20 25 / 0.6); }
+.pdf-zoom-page:not([hidden]) {
+  display: block; margin: 0 auto;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
+}
+.pdf-zoom-close { position: absolute; top: 0.5rem; right: 0.5rem; width: 1.9rem; height: 1.9rem; padding: 0.3rem; }
+.pdf-zoom-status { margin: 0; padding: 3rem 4rem; color: var(--muted); }
 /* A fixed 100% x 100% cell gives the thumbnail's max-width/max-height something definite to resolve against;
    with auto tracks the cell grows to the canvas's (2x DPI) size and the preview spills out of the card. */
 .file-preview {
@@ -219,6 +249,10 @@ h1, h2, h3 { margin: 0; }
   display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem;
   max-width: 560px; margin: 1.5rem auto 0; padding: 0; border: none;
 }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; border: 0;
+}
 .choices legend { font-weight: 700; margin-bottom: 0.75rem; padding: 0; }
 .choice {
   position: relative; display: flex; flex-direction: column; gap: 0.25rem; padding: 1rem 0.75rem;
@@ -227,7 +261,7 @@ h1, h2, h3 { margin: 0; }
 }
 .choice input { position: absolute; opacity: 0; pointer-events: none; }
 .choice:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-.choice-selected { border-color: var(--accent); background: #fff7f7; }
+.choice-selected { border-color: var(--accent); background: var(--accent-soft); }
 .choice-title { font-weight: 700; font-size: 0.95rem; }
 .choices:disabled .choice { cursor: not-allowed; opacity: 0.7; }
 
@@ -324,7 +358,18 @@ h1, h2, h3 { margin: 0; }
   margin: 0 -1.5rem 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border);
 }
 .workspace-sidebar .choices { grid-template-columns: 1fr 1fr; max-width: none; margin: 0; }
-.workspace-sidebar .choices-stacked { grid-template-columns: 1fr; }
+/* Stacked choices become a list of rows split by full-width dividers (across the body's padding, like the h1's);
+   the selected row is tinted, with an accent bar on its left edge. */
+.workspace-sidebar .choices-stacked { grid-template-columns: 1fr; gap: 0; margin: -1.5rem -1.5rem 1.5rem; }
+.workspace-sidebar .choices-stacked .choice {
+  border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 1.1rem 1.5rem;
+}
+.workspace-sidebar .choices-stacked .choice-selected { background: var(--accent-soft); box-shadow: inset 4px 0 var(--accent); }
+.workspace-sidebar .choices-stacked .choice:has(input:focus-visible) { outline-offset: -2px; }
+.workspace-sidebar .choices-stacked .choice-title {
+  color: var(--accent); text-transform: uppercase; font-weight: 400; font-size: 1rem; letter-spacing: 0.04em;
+}
+.workspace-sidebar .choices-stacked .muted { font-size: 0.95rem; color: var(--text-secondary); }
 .workspace-sidebar .reorder-hint { width: auto; margin: 0; color: var(--text); background: #f2f7fd; border-color: #d3e4f7; font-weight: 400; font-size: 0.85rem; line-height: 1.5; align-items: flex-start; }
 .workspace-sidebar .reorder-hint svg { color: #2f74c0; margin-top: 0.1rem; }
 .workspace-sidebar .split-settings { max-width: none; padding: 1rem; }
