@@ -1,6 +1,7 @@
 import { Link, NavLink, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
-import { TOOLS } from './tools'
+import NavGroup from './components/NavGroup'
+import { NAV, TOOLS } from './tools'
 
 export default function App() {
   return (
@@ -11,11 +12,15 @@ export default function App() {
           <span>Toolbox</span>
         </Link>
         <nav>
-          {TOOLS.map((t) => (
-            <NavLink key={t.path} to={t.path}>
-              {t.title}
-            </NavLink>
-          ))}
+          {NAV.map((item) =>
+            'group' in item ? (
+              <NavGroup key={item.group} title={item.group} sections={item.sections} />
+            ) : (
+              <NavLink key={item.tool.path} to={item.tool.path}>
+                {item.tool.title}
+              </NavLink>
+            ),
+          )}
         </nav>
       </header>
       <main className="main">

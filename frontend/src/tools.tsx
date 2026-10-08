@@ -15,7 +15,22 @@ export interface Tool {
   /** URL of the card's icon file. */
   icon: string
   page: ReactElement
+  /** Lists the tool's nav link in this column of a header dropdown (see NAV_GROUPS) instead of the top level. */
+  navSection?: NavSection
 }
+
+/** The header's dropdowns, after the plain links. Each column lists the tools whose `navSection` is its title. */
+const NAV_GROUPS = [{ title: 'Convert PDF', sections: ['Convert to PDF', 'Convert from PDF'] }] as const
+
+type NavSection = (typeof NAV_GROUPS)[number]['sections'][number]
+
+export interface NavSectionItems {
+  title: string
+  tools: Tool[]
+}
+
+/** A top-level header nav item: one tool, or a dropdown with columns of tools. */
+export type NavItem = { tool: Tool } | { group: string; sections: NavSectionItems[] }
 
 export const TOOLS: Tool[] = [
   {
@@ -38,6 +53,7 @@ export const TOOLS: Tool[] = [
     description: 'Convert JPG and PNG images to PDF in seconds, in any order you like.',
     icon: imageToPdfIcon,
     page: <ImagesToPdfPage />,
+    navSection: 'Convert to PDF',
   },
   {
     path: '/split',
@@ -46,4 +62,13 @@ export const TOOLS: Tool[] = [
     icon: splitIcon,
     page: <SplitPage />,
   },
+]
+
+/** The header nav: the plain tool links in order, then the dropdowns. */
+export const NAV: NavItem[] = [
+  ...TOOLS.filter((t) => !t.navSection).map((tool) => ({ tool })),
+  ...NAV_GROUPS.map((g) => ({
+    group: g.title,
+    sections: g.sections.map((title) => ({ title, tools: TOOLS.filter((t) => t.navSection === title) })),
+  })),
 ]

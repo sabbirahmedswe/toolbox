@@ -48,6 +48,50 @@ h1, h2, h3 { margin: 0; }
 /* The current tool's link (NavLink sets .active and aria-current="page"). */
 .header nav a.active { color: var(--accent); }
 
+/* A dropdown in the header nav. It opens on hover, or on click/tap and keyboard (.nav-group-open). */
+.nav-group { position: relative; z-index: 10; }
+.nav-group-button {
+  display: inline-flex; align-items: center; gap: 0.3rem; padding: 0; border: none; background: none; cursor: pointer;
+  font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: var(--nav-text);
+}
+.nav-group-button svg {
+  width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round;
+  stroke-linejoin: round; transition: transform 0.15s;
+}
+.nav-group-button:hover, .nav-group-button.active, .nav-group-open .nav-group-button { color: var(--accent); }
+.nav-group-open .nav-group-button svg { transform: rotate(180deg); }
+.nav-group-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+/* The top padding bridges the gap below the button, so the pointer can reach the menu without it closing. */
+.nav-menu {
+  display: none; position: absolute; top: 100%; left: -1rem; padding-top: 0.75rem;
+}
+.nav-group-open .nav-menu { display: block; }
+@media (hover: hover) {
+  .nav-group:hover .nav-menu { display: block; }
+  .nav-group:hover .nav-group-button svg { transform: rotate(180deg); }
+}
+.nav-menu-panel {
+  display: grid; grid-template-columns: repeat(2, minmax(13rem, 1fr)); gap: 1.5rem; padding: 1.25rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: 0 10px 30px rgb(0 0 0 / 0.12);
+}
+.nav-menu-section h2 {
+  margin: 0 0 0.5rem; padding: 0 0.75rem 0.5rem; border-bottom: 1px solid var(--border);
+  font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted);
+}
+.header .nav-menu a {
+  display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 0.75rem; border-radius: 8px;
+  text-transform: none; font-size: 0.9rem;
+}
+.header .nav-menu a:hover { background: var(--accent-soft); }
+.nav-menu-empty { margin: 0; padding: 0.6rem 0.75rem; font-size: 0.85rem; color: var(--muted); }
+/* One column on narrow screens, and kept within the window. */
+@media (max-width: 600px) {
+  .nav-menu { left: auto; right: -1rem; }
+  .nav-menu-panel { grid-template-columns: minmax(13rem, 1fr); }
+}
+.nav-menu img { width: 1.6rem; height: 1.6rem; flex: none; }
+
 .main { max-width: 1000px; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
 
 .hero {

@@ -47,7 +47,8 @@ Setup and run instructions are in `README.md`. These are the forms to use from C
 ## Frontend conventions
 
 - Each tool is one entry in `src/tools.tsx` (route, card, nav and the home hero's decorative icons are derived
-  from it; the hero shows the first three icons).
+  from it; the hero shows the first three icons). Set `navSection` to list its nav link in a column of a header
+  dropdown instead (columns are defined in `NAV_GROUPS`; dropdowns come after the plain links).
 - Keep site-wide copy (hero, page title) tool-agnostic: the toolbox isn't PDF-only.
 - Use `postForFile` / `downloadBlob` from `src/api/client.ts`, and `FileDropzone` / `SortableFileList` for uploads.
 - Plain CSS in `src/index.css` using the `:root` variables; no UI library.
