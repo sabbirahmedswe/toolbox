@@ -1,4 +1,5 @@
 import io
+import os
 
 from pypdf import PdfWriter
 
@@ -49,3 +50,80 @@ def make_image(
     buf = io.BytesIO()
     im.save(buf, fmt, **options)
     return buf.getvalue()
+
+
+def make_jpeg_pdf(jpegs: list[bytes], soft_mask: bool = False, padding: int = 0) -> bytes:
+    """Build a PDF with one page per JPEG, embedded as is (optionally with a soft mask) at 72 dpi.
+
+    `padding` adds an unused stream of that many bytes, which Ghostscript drops, so the file compresses.
+    """
+    from PIL import Image
+    from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject, NumberObject
+
+    writer = PdfWriter()
+    for i, data in enumerate(jpegs):
+        width, height = Image.open(io.BytesIO(data)).size
+        page = writer.add_blank_page(width=width, height=height)
+        image = DecodedStreamObject()
+        image.set_data(data)
+        image.update(
+            {
+                NameObject("/Type"): NameObject("/XObject"),
+                NameObject("/Subtype"): NameObject("/Image"),
+                NameObject("/Width"): NumberObject(width),
+                NameObject("/Height"): NumberObject(height),
+                NameObject("/ColorSpace"): NameObject("/DeviceRGB"),
+                NameObject("/BitsPerComponent"): NumberObject(8),
+                NameObject("/Filter"): NameObject("/DCTDecode"),
+            }
+        )
+        if soft_mask:
+            # Mostly opaque with a transparent corner, so Ghostscript keeps the mask.
+            alpha = Image.new("L", (width, height), 255)
+            alpha.paste(0, (0, 0, width // 4, height // 4))
+            mask = DecodedStreamObject()
+            mask.set_data(alpha.tobytes())
+            mask.update(
+                {
+                    NameObject("/Type"): NameObject("/XObject"),
+                    NameObject("/Subtype"): NameObject("/Image"),
+                    NameObject("/Width"): NumberObject(width),
+                    NameObject("/Height"): NumberObject(height),
+                    NameObject("/ColorSpace"): NameObject("/DeviceGray"),
+                    NameObject("/BitsPerComponent"): NumberObject(8),
+                }
+            )
+            mask = mask.flate_encode()
+            image[NameObject("/SMask")] = writer._add_object(mask)
+        name = f"/Im{i}"
+        page[NameObject("/Resources")] = DictionaryObject(
+            {NameObject("/XObject"): DictionaryObject({NameObject(name): writer._add_object(image)})}
+        )
+        content = DecodedStreamObject()
+        content.set_data(f"q {width} 0 0 {height} 0 0 cm {name} Do Q".encode())
+        page[NameObject("/Contents")] = writer._add_object(content)
+    if padding:
+        unused = DecodedStreamObject()
+        unused.set_data(os.urandom(padding))
+        writer._add_object(unused)
+    buf = io.BytesIO()
+    writer.write(buf)
+    return buf.getvalue()
+
+
+def make_text_image(seed: int, size: tuple[int, int] = (1240, 1754)):
+    """A white page of random black 'text' lines: different seeds give pages that look alike from afar."""
+    import random
+
+    from PIL import Image, ImageDraw
+
+    rng = random.Random(seed)
+    im = Image.new("RGB", size, "white")
+    draw = ImageDraw.Draw(im)
+    for y in range(120, size[1] - 120, 36):
+        x = 100
+        while x < size[0] - 160:
+            word = rng.randint(30, 120)
+            draw.rectangle((x, y, x + word, y + 14), fill="black")
+            x += word + rng.randint(12, 24)
+    return im

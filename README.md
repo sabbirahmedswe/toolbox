@@ -6,7 +6,7 @@ tools (compression, conversion) are planned:
 - **Merge PDF**: combine several PDFs into one, in the order you choose (drag the files, or sort them by name).
 - **Compress PDF**: shrink a PDF with Ghostscript. Images above 200 dpi (less compression), 150 dpi (recommended)
   or 120 dpi (extreme) are downsampled to it, and colour images are stored as JPEG; text and vector graphics are
-  left sharp.
+  left sharp. Where Ghostscript's copy of a JPEG comes out bigger than the original, the original is kept.
 - **Image to PDF**: turn JPG and PNG images into a PDF, one image per page.
 - **Split PDF**: split a PDF into one file per page range (such as `1-3, 5, 8-10`) or every N pages, or extract
   the chosen pages into a single PDF. A numbered preview of the pages helps pick the ranges.

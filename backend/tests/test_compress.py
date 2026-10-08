@@ -5,7 +5,7 @@ import pytest
 from pypdf import PdfReader
 
 from app import config
-from tests.helpers import make_image_pdf, make_pdf
+from tests.helpers import make_image_pdf, make_jpeg_pdf, make_pdf, make_text_image
 
 requires_gs = pytest.mark.skipif(shutil.which(config.GS_BINARY) is None, reason="Ghostscript not installed")
 
@@ -190,3 +190,130 @@ def test_level_settings_reject_out_of_range_values(dpi, qfactor):
 
     with pytest.raises(ValueError):
         LevelSettings("/ebook", dpi, qfactor)
+
+
+def jpeg(im, quality: int) -> bytes:
+    buf = io.BytesIO()
+    im.save(buf, "JPEG", quality=quality)
+    return buf.getvalue()
+
+
+def page_jpegs(pdf: bytes) -> list[tuple[bytes, int, int]]:
+    from app.services.compress import _images
+
+    reader = PdfReader(io.BytesIO(pdf))
+    return [(i._data, i["/Width"], i["/Height"]) for i in _images(reader.pages) if i["/Filter"] == "/DCTDecode"]
+
+
+@pytest.fixture(scope="module")
+def low_quality_photo() -> bytes:
+    from PIL import Image, ImageFilter
+
+    # Smooth, like a photo, and saved at a lower quality than any level re-encodes at.
+    im = Image.effect_noise((60, 40), 80).convert("RGB").filter(ImageFilter.GaussianBlur(3)).resize((600, 400))
+    return jpeg(im, 30)
+
+
+@requires_gs
+@pytest.mark.parametrize("level", ["low", "medium", "high"])
+def test_smaller_original_jpeg_with_soft_mask_restored(client, low_quality_photo, level):
+    # Ghostscript re-encodes JPEGs with a soft mask, which made low-quality originals bigger.
+    original = make_jpeg_pdf([low_quality_photo], soft_mask=True, padding=100_000)
+    res = client.post("/api/compress", files=pdf_upload("a.pdf", original), data={"level": level})
+    assert res.status_code == 200
+    ((data, width, height),) = page_jpegs(res.content)
+    assert (data, width, height) == (low_quality_photo, 600, 400)
+    assert len(res.content) < len(original)
+
+
+@requires_gs
+def test_restored_jpegs_are_not_swapped_between_similar_pages(tmp_path):
+    # Pages of text look alike when scaled down; each must keep its own image.
+    from app.services.compress import _restore_original_jpegs
+
+    pages = [make_text_image(seed) for seed in range(3)]
+    original = make_jpeg_pdf([jpeg(p, 30) for p in pages])
+    # Stand-in for Ghostscript's output: bigger copies of the same pages, in a different order.
+    dest = tmp_path / "out.pdf"
+    dest.write_bytes(make_jpeg_pdf([jpeg(p, 90) for p in reversed(pages)]))
+    _restore_original_jpegs(PdfReader(io.BytesIO(original)), dest)
+
+    restored = [data for data, _, _ in page_jpegs(dest.read_bytes())]
+    assert restored == [jpeg(p, 30) for p in reversed(pages)]
+
+
+def test_restore_skips_images_that_differ(tmp_path):
+    from app.services.compress import _restore_original_jpegs
+
+    first, second = make_text_image(1), make_text_image(2)
+    original = make_jpeg_pdf([jpeg(first, 30)])
+    dest = tmp_path / "out.pdf"
+    copy = make_jpeg_pdf([jpeg(second, 90)])
+    dest.write_bytes(copy)
+    _restore_original_jpegs(PdfReader(io.BytesIO(original)), dest)
+    assert dest.read_bytes() == copy
+
+
+def test_restore_skipped_for_files_with_too_many_jpegs(tmp_path, monkeypatch):
+    from app.services import compress
+
+    page = make_text_image(1)
+    original = make_jpeg_pdf([jpeg(page, 30)] * 2)
+    dest = tmp_path / "out.pdf"
+    copy = make_jpeg_pdf([jpeg(page, 90)] * 2)
+    dest.write_bytes(copy)
+    monkeypatch.setattr(compress, "_MAX_JPEGS", 0)
+    compress._restore_original_jpegs(PdfReader(io.BytesIO(original)), dest)
+    assert dest.read_bytes() == copy
+
+
+def test_restore_keeps_colour_and_grey_jpegs_apart(tmp_path):
+    from app.services.compress import _restore_original_jpegs
+
+    page = make_text_image(1)  # black and white, so it looks the same in grey and colour
+    original = make_jpeg_pdf([jpeg(page.convert("L"), 30)])
+    dest = tmp_path / "out.pdf"
+    copy = make_jpeg_pdf([jpeg(page, 90)])
+    dest.write_bytes(copy)
+    _restore_original_jpegs(PdfReader(io.BytesIO(original)), dest)
+    assert dest.read_bytes() == copy
+
+
+
+def sideways_text_pdf() -> bytes:
+    """A landscape page whose text all runs bottom to top, which Ghostscript's /screen preset rotates."""
+    from pypdf import PdfWriter
+    from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
+
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=842, height=595)
+    font = DictionaryObject(
+        {
+            NameObject("/Type"): NameObject("/Font"),
+            NameObject("/Subtype"): NameObject("/Type1"),
+            NameObject("/BaseFont"): NameObject("/Helvetica"),
+        }
+    )
+    page[NameObject("/Resources")] = DictionaryObject(
+        {NameObject("/Font"): DictionaryObject({NameObject("/F1"): writer._add_object(font)})}
+    )
+    content = DecodedStreamObject()
+    text = " ".join(f"BT /F1 12 Tf 0 1 -1 0 {100 + 20 * i} 50 Tm (Sideways line of text {i}) Tj ET" for i in range(30))
+    content.set_data(text.encode())
+    page[NameObject("/Contents")] = writer._add_object(content)
+    buf = io.BytesIO()
+    writer.write(buf)
+    return buf.getvalue()
+
+
+@requires_gs
+@pytest.mark.parametrize("level", ["low", "medium", "high"])
+def test_pages_not_auto_rotated(tmp_path, level):
+    from app.services.compress import _run_ghostscript, ghostscript_path
+
+    src, dest = tmp_path / "in.pdf", tmp_path / "out.pdf"
+    src.write_bytes(sideways_text_pdf())
+    _run_ghostscript(ghostscript_path(), src, dest, level, "a.pdf")
+    page = PdfReader(dest).pages[0]
+    assert page.get("/Rotate", 0) == 0
+    assert (float(page.mediabox.width), float(page.mediabox.height)) == (842, 595)
