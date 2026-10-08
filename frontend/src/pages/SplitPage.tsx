@@ -1,8 +1,9 @@
 import { useEffect, useId, useState } from 'react'
-import { downloadBlob, formatBytes, postForFile, type FileResult } from '../api/client'
+import { downloadBlob, postForFile, type FileResult } from '../api/client'
 import BtnIcon from '../components/BtnIcon'
 import FileDropzone from '../components/FileDropzone'
-import PdfPagePreview from '../components/PdfPagePreview'
+import FilePanel from '../components/FilePanel'
+import ToolSidebar from '../components/ToolSidebar'
 import { addWithinLimits, MAX_RANGES_LENGTH, MAX_SPLIT_PARTS } from '../fileItems'
 import { parseRanges, plural } from '../pageRanges'
 import { countPdfPages } from '../pdfThumbnail'
@@ -144,126 +145,107 @@ export default function SplitPage() {
   return (
     <section className="workspace">
       <div className="workspace-main">
-        <div className="split-file">
-          <div className="split-file-header">
-            <div className="selected-file-info">
-              <div className="file-name" title={file.name}>
-                {file.name}
-              </div>
-              <div className="file-size">
-                {formatBytes(file.size)}
-                {pageCount === undefined
-                  ? ' · Counting pages…'
-                  : pageCount !== null && ` · ${plural(pageCount, 'page')}`}
-              </div>
-            </div>
-            {!busy && (
-              <button className="split-file-remove" onClick={reset} aria-label="Remove file" title="Remove file">
-                ×
-              </button>
-            )}
-          </div>
-          <PdfPagePreview file={file} />
-        </div>
+        <FilePanel
+          file={file}
+          detail={pageCount === undefined ? 'Counting pages…' : pageCount !== null && plural(pageCount, 'page')}
+          onRemove={busy ? undefined : reset}
+        />
       </div>
 
-      <aside className="workspace-sidebar">
-        <div className="workspace-sidebar-body">
-          <h1>Split</h1>
-
-          <fieldset className="choices" disabled={busy}>
-            <legend>Split mode</legend>
-            {MODES.map((m) => (
-              <label key={m.value} className={`choice${mode === m.value ? ' choice-selected' : ''}`}>
-                <input
-                  type="radio"
-                  name="mode"
-                  value={m.value}
-                  checked={mode === m.value}
-                  onChange={() => setMode(m.value)}
-                />
-                <span className="choice-title">{m.title}</span>
-                <span className="muted">{m.description}</span>
-              </label>
-            ))}
-          </fieldset>
-
-          <fieldset className="split-settings" disabled={busy}>
-            {mode === 'ranges' ? (
-              <>
-                <label className="field-label" htmlFor={inputId}>
-                  Page ranges
-                </label>
-                <input
-                  id={inputId}
-                  className="text-input"
-                  value={ranges}
-                  onChange={(e) => setRanges(e.target.value)}
-                  placeholder="e.g. 1-3, 5, 8-10"
-                  maxLength={MAX_RANGES_LENGTH}
-                  autoComplete="off"
-                  spellCheck={false}
-                  aria-invalid={showError}
-                  aria-describedby={hintId}
-                />
-                <p id={hintId} className={`field-hint${showError ? ' field-hint-error' : ''}`}>
-                  {showError && 'error' in plan
-                    ? plan.error
-                    : merge
-                      ? 'Separate ranges with commas. Their pages go into one PDF, in this order.'
-                      : 'Separate ranges with commas. Each range becomes its own PDF.'}
-                </p>
-                <label className="checkbox">
-                  <input type="checkbox" checked={merge} onChange={(e) => setMerge(e.target.checked)} />
-                  Put all ranges in one PDF
-                </label>
-              </>
-            ) : (
-              <>
-                <label className="field-label" htmlFor={inputId}>
-                  Pages per PDF
-                </label>
-                <input
-                  id={inputId}
-                  className="text-input text-input-narrow"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={pageCount ?? undefined}
-                  step={1}
-                  value={every}
-                  placeholder="e.g. 5"
-                  onChange={(e) => setEvery(e.target.value)}
-                  aria-invalid={showError}
-                  aria-describedby={hintId}
-                />
-                <p id={hintId} className={`field-hint${showError ? ' field-hint-error' : ''}`}>
-                  {showError && 'error' in plan ? plan.error : 'The last PDF gets whatever pages are left.'}
-                </p>
-              </>
-            )}
-          </fieldset>
-
-          {'parts' in plan && plan.parts !== null && (
-            <p className="split-summary">
-              You'll get {plan.parts === 1 ? 'one PDF' : `${plan.parts} PDFs in a ZIP file`}.
-            </p>
-          )}
-
-          {error && (
-            <div className="error" role="alert">
-              {error}
-            </div>
-          )}
-        </div>
-
-        <div className="workspace-sidebar-footer">
+      <ToolSidebar
+        title="Split"
+        action={
           <button className="btn btn-large" onClick={split} disabled={busy || invalid}>
             {busy ? 'Splitting…' : 'Split PDF'}
             {!busy && <BtnIcon kind="next" />}
           </button>
-        </div>
-      </aside>
+        }
+      >
+        <fieldset className="choices" disabled={busy}>
+          <legend>Split mode</legend>
+          {MODES.map((m) => (
+            <label key={m.value} className={`choice${mode === m.value ? ' choice-selected' : ''}`}>
+              <input
+                type="radio"
+                name="mode"
+                value={m.value}
+                checked={mode === m.value}
+                onChange={() => setMode(m.value)}
+              />
+              <span className="choice-title">{m.title}</span>
+              <span className="muted">{m.description}</span>
+            </label>
+          ))}
+        </fieldset>
+
+        <fieldset className="split-settings" disabled={busy}>
+          {mode === 'ranges' ? (
+            <>
+              <label className="field-label" htmlFor={inputId}>
+                Page ranges
+              </label>
+              <input
+                id={inputId}
+                className="text-input"
+                value={ranges}
+                onChange={(e) => setRanges(e.target.value)}
+                placeholder="e.g. 1-3, 5, 8-10"
+                maxLength={MAX_RANGES_LENGTH}
+                autoComplete="off"
+                spellCheck={false}
+                aria-invalid={showError}
+                aria-describedby={hintId}
+              />
+              <p id={hintId} className={`field-hint${showError ? ' field-hint-error' : ''}`}>
+                {showError && 'error' in plan
+                  ? plan.error
+                  : merge
+                    ? 'Separate ranges with commas. Their pages go into one PDF, in this order.'
+                    : 'Separate ranges with commas. Each range becomes its own PDF.'}
+              </p>
+              <label className="checkbox">
+                <input type="checkbox" checked={merge} onChange={(e) => setMerge(e.target.checked)} />
+                Put all ranges in one PDF
+              </label>
+            </>
+          ) : (
+            <>
+              <label className="field-label" htmlFor={inputId}>
+                Pages per PDF
+              </label>
+              <input
+                id={inputId}
+                className="text-input text-input-narrow"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={pageCount ?? undefined}
+                step={1}
+                value={every}
+                placeholder="e.g. 5"
+                onChange={(e) => setEvery(e.target.value)}
+                aria-invalid={showError}
+                aria-describedby={hintId}
+              />
+              <p id={hintId} className={`field-hint${showError ? ' field-hint-error' : ''}`}>
+                {showError && 'error' in plan ? plan.error : 'The last PDF gets whatever pages are left.'}
+              </p>
+            </>
+          )}
+        </fieldset>
+
+        {'parts' in plan && plan.parts !== null && (
+          <p className="split-summary">
+            You'll get {plan.parts === 1 ? 'one PDF' : `${plan.parts} PDFs in a ZIP file`}.
+          </p>
+        )}
+
+        {error && (
+          <div className="error" role="alert">
+            {error}
+          </div>
+        )}
+      </ToolSidebar>
     </section>
   )
 }

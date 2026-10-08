@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { downloadBlob, formatBytes, postForFile, postForJson, type FileResult } from '../api/client'
 import BtnIcon from '../components/BtnIcon'
 import FileDropzone from '../components/FileDropzone'
-import SelectedFile from '../components/SelectedFile'
+import FilePanel from '../components/FilePanel'
+import ToolSidebar from '../components/ToolSidebar'
 import { addWithinLimits } from '../fileItems'
 
 const ACCEPT = { 'application/pdf': ['.pdf'] }
@@ -128,12 +129,11 @@ export default function CompressPage() {
     )
   }
 
-  return (
-    <section className="tool-page">
-      <h1>Compress a PDF</h1>
-      <p className="subtitle">Shrink your PDF and choose how much quality to trade for a smaller file.</p>
-
-      {!file ? (
+  if (!file) {
+    return (
+      <section className="tool-page">
+        <h1>Compress a PDF</h1>
+        <p className="subtitle">Shrink your PDF and choose how much quality to trade for a smaller file.</p>
         <FileDropzone
           accept={ACCEPT}
           multiple={false}
@@ -142,42 +142,54 @@ export default function CompressPage() {
           label="Select PDF file"
           hint="or drop a PDF here"
         />
-      ) : (
-        <>
-          <SelectedFile file={file} onChange={busy ? undefined : reset} />
-
-          <fieldset className="choices" disabled={busy}>
-            <legend>Compression level</legend>
-            {LEVELS.map((l) => (
-              <label key={l.value} className={`choice${level === l.value ? ' choice-selected' : ''}`}>
-                <input
-                  type="radio"
-                  name="level"
-                  value={l.value}
-                  checked={level === l.value}
-                  onChange={() => setLevel(l.value)}
-                />
-                <span className="choice-title">{l.title}</span>
-                <span className="muted">{l.description}</span>
-                <LevelEstimate original={file.size} size={current?.sizes?.[l.value]} loading={!current} />
-              </label>
-            ))}
-          </fieldset>
-
-          <div className="actions">
-            <button className="btn btn-large" onClick={compress} disabled={busy}>
-              {busy ? 'Compressing…' : 'Compress PDF'}
-              {!busy && <BtnIcon kind="next" />}
-            </button>
+        {error && (
+          <div className="error" role="alert">
+            {error}
           </div>
-        </>
-      )}
+        )}
+      </section>
+    )
+  }
 
-      {error && (
-        <div className="error" role="alert">
-          {error}
-        </div>
-      )}
+  return (
+    <section className="workspace">
+      <div className="workspace-main">
+        <FilePanel file={file} onRemove={busy ? undefined : reset} />
+      </div>
+
+      <ToolSidebar
+        title="Compress"
+        action={
+          <button className="btn btn-large" onClick={compress} disabled={busy}>
+            {busy ? 'Compressing…' : 'Compress PDF'}
+            {!busy && <BtnIcon kind="next" />}
+          </button>
+        }
+      >
+        <fieldset className="choices choices-stacked" disabled={busy}>
+          <legend>Compression level</legend>
+          {LEVELS.map((l) => (
+            <label key={l.value} className={`choice${level === l.value ? ' choice-selected' : ''}`}>
+              <input
+                type="radio"
+                name="level"
+                value={l.value}
+                checked={level === l.value}
+                onChange={() => setLevel(l.value)}
+              />
+              <span className="choice-title">{l.title}</span>
+              <span className="muted">{l.description}</span>
+              <LevelEstimate original={file.size} size={current?.sizes?.[l.value]} loading={!current} />
+            </label>
+          ))}
+        </fieldset>
+
+        {error && (
+          <div className="error" role="alert">
+            {error}
+          </div>
+        )}
+      </ToolSidebar>
     </section>
   )
 }

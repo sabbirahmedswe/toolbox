@@ -5,13 +5,15 @@ interface Props {
   multiple?: boolean
   onFiles: (files: File[]) => void
   onReject?: (message: string) => void
-  /** Compact variant used for "add more files" once some are selected. */
-  compact?: boolean
+  /** A round "+" button used for "add more files" once some are selected; `label` becomes its tooltip. */
+  floating?: boolean
+  /** With `floating`: a count shown as a badge on the button, e.g. the files picked so far. */
+  badge?: number
   label: string
   hint?: string
 }
 
-export default function FileDropzone({ accept, multiple = true, onFiles, onReject, compact, label, hint }: Props) {
+export default function FileDropzone({ accept, multiple = true, onFiles, onReject, floating, badge, label, hint }: Props) {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept,
     multiple,
@@ -28,26 +30,36 @@ export default function FileDropzone({ accept, multiple = true, onFiles, onRejec
     },
   })
 
-  return (
-    <div
-      {...getRootProps({
-        className: `dropzone${compact ? ' dropzone-compact' : ''}${isDragActive ? ' dropzone-active' : ''}`,
-      })}
-    >
-      <input {...getInputProps()} />
-      {compact ? (
-        <span className="dropzone-add">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+  if (floating) {
+    return (
+      <div
+        {...getRootProps({
+          className: `fab fab-primary${isDragActive ? ' fab-active' : ''}`,
+          role: 'button',
+          'aria-label': badge === undefined ? label : `${label} (${badge} selected)`,
+        })}
+      >
+        <input {...getInputProps()} />
+        <span className="fab-tooltip" aria-hidden="true">
           {label}
         </span>
-      ) : (
-        <>
-          <span className="btn">{label}</span>
-          <p className="muted">{isDragActive ? 'Drop files here' : (hint ?? 'or drop files here')}</p>
-        </>
-      )}
+        {badge !== undefined && (
+          <span className="fab-badge" aria-hidden="true">
+            {badge}
+          </span>
+        )}
+        <svg className="fab-plus" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      </div>
+    )
+  }
+
+  return (
+    <div {...getRootProps({ className: `dropzone${isDragActive ? ' dropzone-active' : ''}` })}>
+      <input {...getInputProps()} />
+      <span className="btn">{label}</span>
+      <p className="muted">{isDragActive ? 'Drop files here' : (hint ?? 'or drop files here')}</p>
     </div>
   )
 }

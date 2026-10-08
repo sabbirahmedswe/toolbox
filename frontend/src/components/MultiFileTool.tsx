@@ -5,6 +5,7 @@ import { addWithinLimits, type FileItem } from '../fileItems'
 import BtnIcon from './BtnIcon'
 import FileDropzone from './FileDropzone'
 import SortableFileList from './SortableFileList'
+import ToolSidebar from './ToolSidebar'
 
 interface Props {
   endpoint: string
@@ -13,6 +14,8 @@ interface Props {
   minFiles: number
   title: string
   subtitle: string
+  /** Heading of the settings panel, e.g. "Merge". */
+  sidebarTitle: string
   selectLabel: string
   hint: string
   addMoreLabel: string
@@ -25,6 +28,16 @@ interface Props {
   downloadLabel: string
   againLabel: string
   renderPreview?: (item: FileItem) => ReactNode
+  /** Shows a button that sorts the files by name. */
+  sortByName?: boolean
+}
+
+// Natural order, so "file 2" comes before "file 10", ignoring case and accents.
+const byName = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
+
+function sortedByName(items: FileItem[], descending: boolean): FileItem[] {
+  const sorted = [...items].sort((a, b) => byName.compare(a.file.name, b.file.name))
+  return descending ? sorted.reverse() : sorted
 }
 
 /** Shared page for tools that upload an ordered list of files and download one PDF back. */
@@ -81,43 +94,87 @@ export default function MultiFileTool(props: Props) {
   }
 
   const tooFew = items.length < props.minFiles
+  // Like a column header: sort A–Z, and once in that order, Z–A.
+  const ascending = sortedByName(items, false)
+  const nextDescending = items.every((item, i) => item === ascending[i])
+  const sortLabel = nextDescending ? 'Sort by name, Z to A' : 'Sort by name, A to Z'
+  // Too few files to submit: say why the button is disabled. Otherwise, with files to reorder, say how.
+  const notice = tooFew ? props.minFilesHint : items.length > 1 ? props.reorderHint : undefined
+
+  if (items.length === 0) {
+    return (
+      <section className="tool-page">
+        <h1>{props.title}</h1>
+        <p className="subtitle">{props.subtitle}</p>
+        <FileDropzone accept={props.accept} onFiles={addFiles} onReject={setError} label={props.selectLabel} hint={props.hint} />
+        {error && (
+          <div className="error" role="alert">
+            {error}
+          </div>
+        )}
+      </section>
+    )
+  }
 
   return (
-    <section className="tool-page">
-      <h1>{props.title}</h1>
-      <p className="subtitle">{props.subtitle}</p>
-
-      {items.length === 0 ? (
-        <FileDropzone accept={props.accept} onFiles={addFiles} onReject={setError} label={props.selectLabel} hint={props.hint} />
-      ) : (
-        <>
-          {props.reorderHint && items.length > 1 && !busy && (
-            <p className="reorder-hint">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4" />
-              </svg>
-              {props.reorderHint}
-            </p>
-          )}
-          <SortableFileList items={items} onChange={setItems} disabled={busy} renderPreview={props.renderPreview} />
-          {!busy && (
-            <FileDropzone accept={props.accept} onFiles={addFiles} onReject={setError} label={props.addMoreLabel} compact />
-          )}
-          <div className="actions">
-            <button className="btn btn-large" onClick={submit} disabled={busy || tooFew}>
-              {busy ? props.busyLabel : props.actionLabel}
-              {!busy && <BtnIcon kind="next" />}
-            </button>
+    <section className="workspace">
+      <div className="workspace-main workspace-main-files">
+        {!busy && (
+          <div className="file-toolbar">
+            <FileDropzone
+              accept={props.accept}
+              onFiles={addFiles}
+              onReject={setError}
+              label={props.addMoreLabel}
+              floating
+              badge={items.length}
+            />
+            {props.sortByName && items.length > 1 && (
+              <button className="fab" onClick={() => setItems(sortedByName(items, nextDescending))} aria-label={sortLabel}>
+                <span className="fab-tooltip" aria-hidden="true">
+                  Order by name
+                </span>
+                {/* The order a click gives: a downward arrow beside A over Z, or Z over A. */}
+                <svg className="sort-arrow" viewBox="6 3 12 18" aria-hidden="true">
+                  <path d="M12 4v16M8 16l4 4 4-4" />
+                </svg>
+                <span className="sort-letters" aria-hidden="true">
+                  <span>{nextDescending ? 'Z' : 'A'}</span>
+                  <span>{nextDescending ? 'A' : 'Z'}</span>
+                </span>
+              </button>
+            )}
           </div>
-          {tooFew && props.minFilesHint && <p className="muted">{props.minFilesHint}</p>}
-        </>
-      )}
-
-      {error && (
-        <div className="error" role="alert">
-          {error}
+        )}
+        <div className="workspace-files">
+          <SortableFileList items={items} onChange={setItems} disabled={busy} renderPreview={props.renderPreview} />
         </div>
-      )}
+      </div>
+
+      <ToolSidebar
+        title={props.sidebarTitle}
+        action={
+          <button className="btn btn-large" onClick={submit} disabled={busy || tooFew}>
+            {busy ? props.busyLabel : props.actionLabel}
+            {!busy && <BtnIcon kind="next" />}
+          </button>
+        }
+      >
+        {notice && !busy && (
+          <p className="reorder-hint">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 11v5M12 8h.01" />
+            </svg>
+            {notice}
+          </p>
+        )}
+        {error && (
+          <div className="error" role="alert">
+            {error}
+          </div>
+        )}
+      </ToolSidebar>
     </section>
   )
 }

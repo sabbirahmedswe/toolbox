@@ -10,6 +10,7 @@ export default function ImagesToPdfPage() {
       minFiles={1}
       title="Convert images to PDF"
       subtitle="Turn JPG and PNG images into a single PDF, one image per page."
+      sidebarTitle="Image to PDF"
       selectLabel="Select images"
       hint="or drop JPG or PNG images here"
       addMoreLabel="Add more images"
