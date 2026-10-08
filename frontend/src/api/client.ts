@@ -13,19 +13,11 @@ export async function postForFile(url: string, form: FormData, fallbackName: str
   return { blob: await res.blob(), filename, headers: res.headers }
 }
 
-/** POST multipart form data and return the parsed JSON response. */
-export async function postForJson<T>(url: string, form: FormData, signal?: AbortSignal): Promise<T> {
-  const res = await post(url, form, signal)
-  return (await res.json()) as T
-}
-
-async function post(url: string, form: FormData, signal?: AbortSignal): Promise<Response> {
+async function post(url: string, form: FormData): Promise<Response> {
   let res: Response
   try {
-    res = await fetch(url, { method: 'POST', body: form, signal })
-  } catch (e) {
-    // Let callers tell a deliberate cancel apart from a network failure.
-    if (signal?.aborted) throw e
+    res = await fetch(url, { method: 'POST', body: form })
+  } catch {
     throw new ApiError('Could not reach the server. Is the backend running?')
   }
 

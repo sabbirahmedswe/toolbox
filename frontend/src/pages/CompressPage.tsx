@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { downloadBlob, formatBytes, postForFile, postForJson, type FileResult } from '../api/client'
+import { useState } from 'react'
+import { downloadBlob, formatBytes, postForFile, type FileResult } from '../api/client'
 import BtnIcon from '../components/BtnIcon'
 import FileDropzone from '../components/FileDropzone'
 import FilePanel from '../components/FilePanel'
@@ -16,12 +16,6 @@ const LEVELS: { value: Level; title: string; description: string }[] = [
   { value: 'low', title: 'Less compression', description: 'High quality, larger file' },
 ]
 
-/** Size each level would produce, or null when the estimate failed. */
-interface Estimate {
-  file: File
-  sizes: Record<Level, number> | null
-}
-
 interface Outcome {
   result: FileResult
   originalSize: number
@@ -34,27 +28,6 @@ export default function CompressPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
-  const [estimate, setEstimate] = useState<Estimate | null>(null)
-
-  // Ignore an estimate left over from a previously selected file.
-  const current = estimate?.file === file ? estimate : null
-  // Not while compressing: the estimate would compete with it for the server's CPU. Cancelling stops
-  // the server at its next level; if compressing fails, the estimate starts again.
-  const wantEstimate = file !== null && !current && !busy && !outcome
-
-  useEffect(() => {
-    if (!file || !wantEstimate) return
-    const controller = new AbortController()
-    const form = new FormData()
-    form.append('file', file)
-    postForJson<{ sizes: Record<Level, number> }>('/api/compress/estimate', form, controller.signal)
-      .then((res) => setEstimate({ file, sizes: res.sizes }))
-      .catch(() => {
-        // An estimate is a nice-to-have: on failure just leave it out; Compress reports real errors.
-        if (!controller.signal.aborted) setEstimate({ file, sizes: null })
-      })
-    return () => controller.abort()
-  }, [file, wantEstimate])
 
   function selectFile(files: File[]) {
     const next = addWithinLimits([], files.slice(0, 1))
@@ -179,7 +152,6 @@ export default function CompressPage() {
               />
               <span className="choice-title">{l.title}</span>
               <span className="muted">{l.description}</span>
-              <LevelEstimate original={file.size} size={current?.sizes?.[l.value]} loading={!current} />
             </label>
           ))}
         </fieldset>
@@ -191,17 +163,6 @@ export default function CompressPage() {
         )}
       </ToolSidebar>
     </section>
-  )
-}
-
-function LevelEstimate({ original, size, loading }: { original: number; size?: number; loading: boolean }) {
-  if (loading) return <span className="level-estimate level-estimate-muted">Estimating…</span>
-  if (size === undefined) return <span className="level-estimate level-estimate-muted">Estimate unavailable</span>
-  if (size >= original) return <span className="level-estimate">No smaller</span>
-  return (
-    <span className="level-estimate">
-      ≈ {formatBytes(size)} <span className="level-estimate-percent">−{savingsPercent(original, size)}%</span>
-    </span>
   )
 }
 

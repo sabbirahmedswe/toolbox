@@ -1,8 +1,6 @@
 import logging
-import math
 import shutil
 import subprocess
-import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -67,40 +65,9 @@ def compress_pdf(src: Path, dest: Path, level: Level, name: str) -> tuple[Path, 
 
     Returns the path of the smaller of the two files and whether it is the compressed one.
     """
-    gs = check_compressible(src, name)
-    _run_ghostscript(gs, src, dest, level, name, config.GS_TIMEOUT_SECONDS)
-    return _smaller(src, dest)
-
-
-def check_compressible(src: Path, name: str) -> str:
-    """Checks made before any Ghostscript run; returns the Ghostscript path."""
     # Validate with pypdf first so damaged or password-protected files get a clear message.
     open_pdf(src, name)
-    return ghostscript_path()
-
-
-def estimate_size(gs: str, src: Path, tmp: Path, level: Level, name: str, deadline: float) -> int:
-    """Return the size `compress_pdf` would hand back for `level`.
-
-    `deadline` (a `time.monotonic()` value) is shared by every level of one estimate, so a whole
-    estimate is held to GS_TIMEOUT_SECONDS, like one compression.
-    """
-    remaining = deadline - time.monotonic()
-    if remaining <= 0:
-        raise ProcessingError(too_long(name))
-    dest = tmp / f"estimate-{level}.pdf"
-    try:
-        _run_ghostscript(gs, src, dest, level, name, remaining)
-        return _smaller(src, dest)[0].stat().st_size
-    finally:
-        dest.unlink(missing_ok=True)
-
-
-def too_long(name: str) -> str:
-    return f'"{name}" took too long to compress.'
-
-
-def _smaller(src: Path, dest: Path) -> tuple[Path, bool]:
+    _run_ghostscript(ghostscript_path(), src, dest, level, name)
     # Ghostscript can make already-optimised files bigger; never hand back a larger file.
     if dest.stat().st_size < src.stat().st_size:
         return dest, True
@@ -126,7 +93,7 @@ def _image_args(settings: LevelSettings) -> list[str]:
     return args
 
 
-def _run_ghostscript(gs: str, src: Path, dest: Path, level: Level, name: str, timeout: float) -> None:
+def _run_ghostscript(gs: str, src: Path, dest: Path, level: Level, name: str) -> None:
     settings = LEVELS[level]
     # Fixed-point: Python's repr (e.g. 1e-05) isn't always valid PostScript.
     jpeg = f"<< /QFactor {settings.qfactor:.2f} /Blend 1 /HSamples [2 1 1 2] /VSamples [2 1 1 2] >>"
@@ -147,7 +114,7 @@ def _run_ghostscript(gs: str, src: Path, dest: Path, level: Level, name: str, ti
         "-f",
         str(src),
     ]
-    limits = [str(config.GS_MEMORY_LIMIT_MB * 1024), str(math.ceil(timeout))]
+    limits = [str(config.GS_MEMORY_LIMIT_MB * 1024), str(config.GS_TIMEOUT_SECONDS)]
     cmd = ["sh", "-c", _LIMITED_EXEC, "sh", *limits, *gs_cmd]
     try:
         # Output is discarded: a hostile file could otherwise make gs emit unbounded warnings.
@@ -156,10 +123,10 @@ def _run_ghostscript(gs: str, src: Path, dest: Path, level: Level, name: str, ti
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            timeout=timeout,
+            timeout=config.GS_TIMEOUT_SECONDS,
         )
     except subprocess.TimeoutExpired as e:
-        raise ProcessingError(too_long(name)) from e
+        raise ProcessingError(f'"{name}" took too long to compress.') from e
     except subprocess.CalledProcessError as e:
         logger.warning("Ghostscript failed on %r with exit code %s", name, e.returncode)
         raise ProcessingError(f'"{name}" could not be compressed. It may be damaged or too complex.') from e
