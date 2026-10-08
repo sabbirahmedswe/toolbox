@@ -1,4 +1,4 @@
-import { Link, Route, Routes } from 'react-router-dom'
+import { Link, NavLink, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import { TOOLS } from './tools'
 
@@ -12,9 +12,9 @@ export default function App() {
         </Link>
         <nav>
           {TOOLS.map((t) => (
-            <Link key={t.path} to={t.path}>
+            <NavLink key={t.path} to={t.path}>
               {t.title}
-            </Link>
+            </NavLink>
           ))}
         </nav>
       </header>

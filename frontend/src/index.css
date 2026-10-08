@@ -3,6 +3,7 @@
   --surface: #ffffff;
   --text: #33333b;
   --nav-text: #222228;
+  --logo-text: #040404;
   --muted: #707078;
   --text-secondary: #55555d;
   --border: #e3e3ea;
@@ -37,13 +38,15 @@ h1, h2, h3 { margin: 0; }
   font-family: 'DM Serif Display', Georgia, serif;
   font-weight: 400; font-size: 2rem; letter-spacing: -0.01em; line-height: 1;
   display: inline-flex; align-items: center; gap: 0.6rem;
-  color: var(--nav-text);
+  color: var(--logo-text);
 }
 .logo span { position: relative; top: -0.06em; } /* optical centring: lift the lowercase x-height to the nav links' middle */
 .logo-icon { width: 2rem; height: 2rem; flex: none; }
-.header nav { display: flex; align-items: center; gap: 2.75rem; flex-wrap: wrap; }
-.header nav a { font-weight: 600; font-size: 0.9rem; text-transform: uppercase; color: var(--nav-text); }
+.header nav { display: flex; align-items: center; gap: 3.5rem; flex-wrap: wrap; }
+.header nav a { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: var(--nav-text); }
 .header nav a:hover { color: var(--accent); }
+/* The current tool's link (NavLink sets .active and aria-current="page"). */
+.header nav a.active { color: var(--accent); }
 
 .main { max-width: 1000px; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
 
