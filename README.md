@@ -10,6 +10,8 @@ tools (compression, conversion) are planned:
 - **Image to PDF**: turn JPG and PNG images into a PDF, one image per page.
 - **Split PDF**: split a PDF into one file per page range (such as `1-3, 5, 8-10`) or every N pages, or extract
   the chosen pages into a single PDF. A numbered preview of the pages helps pick the ranges.
+- **PDF to JPG**: turn each page of a PDF into a JPG image, at 150 dpi (normal) or 300 dpi (high quality).
+  A one-page PDF gives one image; longer ones give a ZIP of images.
 
 There are no accounts and nothing is stored. Each file is processed in a temporary folder that is
 deleted before the response is sent.
@@ -73,13 +75,16 @@ to start otherwise.
 | `MAX_FILE_SIZE_MB` | `50` | Largest single uploaded file |
 | `MAX_TOTAL_SIZE_MB` | `200` | Largest request body (checked before the upload is read) |
 | `MAX_FILES` | `20` | Most files in one request |
-| `MAX_IMAGE_PIXELS` | `100000000` | Largest image (width × height) for Image to PDF |
+| `MAX_IMAGE_PIXELS` | `100000000` | Largest image (width × height) for Image to PDF, and largest page image for PDF to JPG |
 | `MAX_CONCURRENT_COMPRESSIONS` | CPU count | Compressions at once; extra requests get `503` |
 | `MAX_CONCURRENT_IMAGE_JOBS` | `min(CPU count, 4)` | Image conversions at once; extra requests get `503` |
 | `MAX_SPLIT_PARTS` | `500` | Most PDFs one split may produce |
 | `MAX_SPLIT_OUTPUT_MB` | `200` | Largest total size of a split's PDFs (each part keeps its own copy of shared fonts and images, so this can exceed the original's size) |
 | `MAX_CONCURRENT_SPLITS` | `min(CPU count, 4)` | Splits at once; extra requests get `503` |
-| `GS_TIMEOUT_SECONDS` | `120` | Time limit for one compression |
+| `MAX_PDF_TO_JPG_PAGES` | `500` | Most pages one PDF to JPG conversion may render |
+| `MAX_PDF_TO_JPG_OUTPUT_MB` | `200` | Largest total size of one conversion's images |
+| `MAX_CONCURRENT_PDF_TO_JPG` | `min(CPU count, 4)` | PDF to JPG conversions at once; extra requests get `503` |
+| `GS_TIMEOUT_SECONDS` | `120` | Time limit for one compression or PDF to JPG conversion |
 | `GS_MEMORY_LIMIT_MB` | `2048` | Memory limit for one Ghostscript run |
 | `GS_BINARY` | `gs` | Ghostscript executable |
 | `ALLOWED_ORIGINS` | `http://localhost:5173` | Comma-separated CORS origins (only needed when the frontend runs on another origin) |
@@ -90,7 +95,7 @@ in `frontend/nginx.conf`.
 
 ## API
 
-All endpoints take `multipart/form-data` and return the resulting PDF (or ZIP) as a download. Errors return
+All endpoints take `multipart/form-data` and return the resulting file (PDF, JPG or ZIP) as a download. Errors return
 JSON `{"detail": "..."}` with status 400, 413, 422 or 503.
 
 | Endpoint | Fields | Result |
@@ -99,6 +104,7 @@ JSON `{"detail": "..."}` with status 400, 413, 422 or 503.
 | `POST /api/split` | `file` (one PDF), `mode` = `ranges` (default) \| `every`, `ranges` (for `ranges`: comma-separated, non-overlapping, e.g. `1-3, 5, 8-10`; at most 1000 characters), `every` (for `every`: pages per file, default `1`), `merge` = `true` \| `false` (default; `ranges` only) | One PDF per range or chunk, as `<name>_split.zip`. A single result is returned as `<name>_<range>.pdf`, and with `merge=true` all ranges go into `<name>_split.pdf` |
 | `POST /api/compress` | `file` (one PDF), `level` = `low` \| `medium` (default) \| `high` | `<name>_compressed.pdf`, plus `X-Original-Size` / `X-Compressed-Size` headers |
 | `POST /api/images-to-pdf` | `files` (1 or more JPEG/PNG, in order) | `images.pdf` |
+| `POST /api/pdf-to-jpg` | `file` (one PDF), `quality` = `normal` (default, 150 dpi) \| `high` (300 dpi) | `<name>.jpg` for a one-page PDF, otherwise `<name>_jpg.zip` of `<name>_<page>.jpg` (page numbers zero-padded so they sort in order) |
 | `GET /api/health` | none | `{"status": "ok"}` |
 
 Example:

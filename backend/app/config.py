@@ -40,3 +40,8 @@ MAX_CONCURRENT_IMAGE_JOBS = _int_env("MAX_CONCURRENT_IMAGE_JOBS", min(os.cpu_cou
 MAX_SPLIT_PARTS = _int_env("MAX_SPLIT_PARTS", 500)
 MAX_SPLIT_OUTPUT_MB = _int_env("MAX_SPLIT_OUTPUT_MB", 200)
 MAX_CONCURRENT_SPLITS = _int_env("MAX_CONCURRENT_SPLITS", min(os.cpu_count() or 2, 4))
+# PDF to JPG: most pages one conversion may render, the largest total size of the images, and jobs at once.
+# Each page's image is also limited to MAX_IMAGE_PIXELS, and the whole conversion to GS_TIMEOUT_SECONDS.
+MAX_PDF_TO_JPG_PAGES = _int_env("MAX_PDF_TO_JPG_PAGES", 500)
+MAX_PDF_TO_JPG_OUTPUT_MB = _int_env("MAX_PDF_TO_JPG_OUTPUT_MB", 200)
+MAX_CONCURRENT_PDF_TO_JPG = _int_env("MAX_CONCURRENT_PDF_TO_JPG", min(os.cpu_count() or 2, 4))

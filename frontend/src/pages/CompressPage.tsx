@@ -158,7 +158,11 @@ export default function CompressPage() {
                 name="level"
                 value={l.value}
                 checked={level === l.value}
-                onChange={() => setLevel(l.value)}
+                onChange={() => {
+                  setLevel(l.value)
+                  // A server error from the last attempt may not apply at the new level.
+                  setError(null)
+                }}
               />
               <span className="choice-title">{l.title}</span>
               <span className="muted">{l.description}</span>

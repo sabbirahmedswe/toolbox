@@ -7,6 +7,8 @@ export const MAX_TOTAL_SIZE = 200 * 1024 * 1024
 // Split: most PDFs one split may create, and the longest page-ranges text.
 export const MAX_SPLIT_PARTS = 500
 export const MAX_RANGES_LENGTH = 1000
+// PDF to JPG: most pages one conversion may render.
+export const MAX_PDF_TO_JPG_PAGES = 500
 // The backend limits the whole request body, which adds multipart boundaries and part headers to the files.
 const MULTIPART_HEADROOM = 1024 * 1024
 

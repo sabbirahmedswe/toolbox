@@ -1,7 +1,6 @@
 import io
 import re
 import zipfile
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
@@ -9,6 +8,7 @@ from pypdf import PdfReader, PdfWriter
 
 from app import config
 from app.errors import ProcessingError
+from app.services.output import FileResult, check_output_size
 from app.services.pdf import RESOURCE_ERRORS, open_pdf
 from app.utils.files import output_stem
 
@@ -19,15 +19,6 @@ PageRange = tuple[int, int]
 
 _RANGE = re.compile(r"([0-9]+)(?:\s*-\s*([0-9]+))?")
 
-MB = 1024 * 1024
-
-
-@dataclass
-class SplitResult:
-    # A view of the output buffer rather than a copy, so a large result is held in memory only once.
-    data: memoryview
-    filename: str
-    media_type: str
 
 
 def parse_ranges(text: str, page_count: int) -> list[PageRange]:
@@ -67,7 +58,7 @@ def range_label(r: PageRange) -> str:
     return str(r[0]) if r[0] == r[1] else f"{r[0]}-{r[1]}"
 
 
-def split_pdf(path: Path, name: str, mode: Mode, ranges: str, every: int, merge: bool) -> SplitResult:
+def split_pdf(path: Path, name: str, mode: Mode, ranges: str, every: int, merge: bool) -> FileResult:
     """Split a PDF into one PDF per page range (zipped if more than one), or with `merge`, one PDF of all ranges."""
     reader = open_pdf(path, name)
     page_count = len(reader.pages)
@@ -86,9 +77,9 @@ def split_pdf(path: Path, name: str, mode: Mode, ranges: str, every: int, merge:
         # Checked once written, but one PDF holds each shared font or image once, so it can't grow much past
         # the original. Only a ZIP, where every part has its own copies, can multiply it.
         data = write_pages(reader, selected, name)
-        check_output_size(len(data))
+        _check_output_size(len(data))
         filename = f"{stem}_split.pdf" if merge else f"{stem}_{range_label(selected[0])}.pdf"
-        return SplitResult(data, filename, "application/pdf")
+        return FileResult(data, filename, "application/pdf")
 
     buf = io.BytesIO()
     total = 0
@@ -98,9 +89,9 @@ def split_pdf(path: Path, name: str, mode: Mode, ranges: str, every: int, merge:
             data = write_pages(reader, [r], name)
             # Checked as each part is written, so memory stays bounded by the limit plus one part.
             total += len(data)
-            check_output_size(total)
+            _check_output_size(total)
             zf.writestr(f"{stem}_{range_label(r)}.pdf", data)
-    return SplitResult(buf.getbuffer(), f"{stem}_split.zip", "application/zip")
+    return FileResult(buf.getbuffer(), f"{stem}_split.zip", "application/zip")
 
 
 def write_pages(reader: PdfReader, ranges: list[PageRange], name: str) -> memoryview:
@@ -119,9 +110,5 @@ def write_pages(reader: PdfReader, ranges: list[PageRange], name: str) -> memory
     return buf.getbuffer()
 
 
-def check_output_size(size: int) -> None:
-    if size > config.MAX_SPLIT_OUTPUT_MB * MB:
-        raise ProcessingError(
-            f"The split PDFs would be larger than the {config.MAX_SPLIT_OUTPUT_MB} MB limit. "
-            "Try fewer or larger ranges."
-        )
+def _check_output_size(size: int) -> None:
+    check_output_size(size, config.MAX_SPLIT_OUTPUT_MB, "The split PDFs", "Try fewer or larger ranges.")

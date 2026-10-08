@@ -2,7 +2,8 @@ from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
 from app import config
-from app.services.compress import GhostscriptMissing, Level, compress_pdf
+from app.services.compress import Level, compress_pdf
+from app.services.ghostscript import GhostscriptMissing
 from app.utils.files import PDF, attachment, output_stem, save_upload, workdir
 from app.utils.limits import JobLimiter
 

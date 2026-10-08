@@ -8,8 +8,8 @@ from fastapi.responses import JSONResponse
 from app import config
 from app.errors import ProcessingError
 from app.middleware import RequestSizeLimitMiddleware
-from app.routers import compress, images, merge, split
-from app.services.compress import ghostscript_version
+from app.routers import compress, images, merge, pdf_to_jpg, split
+from app.services.ghostscript import ghostscript_version
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -21,7 +21,7 @@ async def lifespan(_: FastAPI):
         # Ghostscript has a history of -dSAFER bypasses; keep it patched.
         logger.info("Using Ghostscript %s (%s); keep it up to date.", version, config.GS_BINARY)
     else:
-        logger.warning("Ghostscript (%s) not found: PDF compression is unavailable.", config.GS_BINARY)
+        logger.warning("Ghostscript (%s) not found: PDF compression and PDF to JPG are unavailable.", config.GS_BINARY)
     yield
 
 
@@ -47,6 +47,7 @@ app.include_router(merge.router, prefix="/api", tags=["merge"])
 app.include_router(compress.router, prefix="/api", tags=["compress"])
 app.include_router(images.router, prefix="/api", tags=["images"])
 app.include_router(split.router, prefix="/api", tags=["split"])
+app.include_router(pdf_to_jpg.router, prefix="/api", tags=["pdf-to-jpg"])
 
 
 @app.get("/api/health")

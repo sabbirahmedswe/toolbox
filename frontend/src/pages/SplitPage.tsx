@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { useId, useState } from 'react'
 import { downloadBlob, postForFile, type FileResult } from '../api/client'
 import BtnIcon from '../components/BtnIcon'
 import FileDropzone from '../components/FileDropzone'
@@ -6,7 +6,7 @@ import FilePanel from '../components/FilePanel'
 import ToolSidebar from '../components/ToolSidebar'
 import { addWithinLimits, MAX_RANGES_LENGTH, MAX_SPLIT_PARTS } from '../fileItems'
 import { parseRanges, plural } from '../pageRanges'
-import { countPdfPages } from '../pdfThumbnail'
+import { usePdfPageCount } from '../usePdfPageCount'
 
 const ACCEPT = { 'application/pdf': ['.pdf'] }
 
@@ -17,18 +17,11 @@ const MODES: { value: Mode; title: string; description: string }[] = [
   { value: 'every', title: 'Fixed ranges', description: 'A new PDF every few pages' },
 ]
 
-/** Page count of a file, or null when pdf.js couldn't read it (the backend still can, or reports why not). */
-interface PageCount {
-  file: File
-  count: number | null
-}
-
 /** What the settings would produce: the number of PDFs (null if unknown), or why they can't be used. */
 type Plan = { parts: number | null } | { error: string }
 
 export default function SplitPage() {
   const [file, setFile] = useState<File | null>(null)
-  const [pages, setPages] = useState<PageCount | null>(null)
   const [mode, setMode] = useState<Mode>('ranges')
   const [ranges, setRanges] = useState('')
   const [merge, setMerge] = useState(false)
@@ -39,20 +32,8 @@ export default function SplitPage() {
   const inputId = useId()
   const hintId = useId()
 
-  // undefined while counting; ignores a count left over from a previously selected file.
-  const pageCount = pages?.file === file ? pages.count : undefined
-
-  useEffect(() => {
-    if (!file) return
-    const controller = new AbortController()
-    countPdfPages(file, controller.signal).then(
-      (count) => setPages({ file, count }),
-      () => {
-        if (!controller.signal.aborted) setPages({ file, count: null })
-      },
-    )
-    return () => controller.abort()
-  }, [file])
+  // undefined while counting, null if pdf.js can't read the file.
+  const pageCount = usePdfPageCount(file)
 
   const plan = planSplit(mode, ranges, merge, every, pageCount ?? null)
 

@@ -2,10 +2,12 @@ import type { ReactElement } from 'react'
 import compressIcon from './assets/icons/compress.svg'
 import imageToPdfIcon from './assets/icons/image-to-pdf.svg'
 import mergeIcon from './assets/icons/merge.svg'
+import pdfToJpgIcon from './assets/icons/pdf-to-jpg.svg'
 import splitIcon from './assets/icons/split.svg'
 import CompressPage from './pages/CompressPage'
 import ImagesToPdfPage from './pages/ImagesToPdfPage'
 import MergePage from './pages/MergePage'
+import PdfToJpgPage from './pages/PdfToJpgPage'
 import SplitPage from './pages/SplitPage'
 
 export interface Tool {
@@ -61,6 +63,14 @@ export const TOOLS: Tool[] = [
     description: 'Split a PDF by page ranges or every few pages, or pull out just the pages you need.',
     icon: splitIcon,
     page: <SplitPage />,
+  },
+  {
+    path: '/pdf-to-jpg',
+    title: 'PDF to JPG',
+    description: 'Turn every page of a PDF into a JPG image, in normal or high quality.',
+    icon: pdfToJpgIcon,
+    page: <PdfToJpgPage />,
+    navSection: 'Convert from PDF',
   },
 ]
 
