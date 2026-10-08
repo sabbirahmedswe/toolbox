@@ -1,8 +1,8 @@
 import { useEffect, useId, useState } from 'react'
-import { downloadBlob, postForFile, type FileResult } from '../api/client'
+import { downloadBlob, formatBytes, postForFile, type FileResult } from '../api/client'
 import BtnIcon from '../components/BtnIcon'
 import FileDropzone from '../components/FileDropzone'
-import SelectedFile from '../components/SelectedFile'
+import PdfPagePreview from '../components/PdfPagePreview'
 import { addWithinLimits, MAX_RANGES_LENGTH, MAX_SPLIT_PARTS } from '../fileItems'
 import { parseRanges, plural } from '../pageRanges'
 import { countPdfPages } from '../pdfThumbnail'
@@ -119,12 +119,11 @@ export default function SplitPage() {
   const typed = (mode === 'ranges' ? ranges : every).trim() !== ''
   const showError = invalid && (typed || pageCount === 0)
 
-  return (
-    <section className="tool-page">
-      <h1>Split a PDF</h1>
-      <p className="subtitle">Separate a PDF into several files by page range, or pull out just the pages you need.</p>
-
-      {!file ? (
+  if (!file) {
+    return (
+      <section className="tool-page">
+        <h1>Split a PDF</h1>
+        <p className="subtitle">Separate a PDF into several files by page range, or pull out just the pages you need.</p>
         <FileDropzone
           accept={ACCEPT}
           multiple={false}
@@ -133,13 +132,44 @@ export default function SplitPage() {
           label="Select PDF file"
           hint="or drop a PDF here"
         />
-      ) : (
-        <>
-          <SelectedFile
-            file={file}
-            detail={pageCount === undefined ? 'Counting pages…' : pageCount !== null && plural(pageCount, 'page')}
-            onChange={busy ? undefined : reset}
-          />
+        {error && (
+          <div className="error" role="alert">
+            {error}
+          </div>
+        )}
+      </section>
+    )
+  }
+
+  return (
+    <section className="workspace">
+      <div className="workspace-main">
+        <div className="split-file">
+          <div className="split-file-header">
+            <div className="selected-file-info">
+              <div className="file-name" title={file.name}>
+                {file.name}
+              </div>
+              <div className="file-size">
+                {formatBytes(file.size)}
+                {pageCount === undefined
+                  ? ' · Counting pages…'
+                  : pageCount !== null && ` · ${plural(pageCount, 'page')}`}
+              </div>
+            </div>
+            {!busy && (
+              <button className="split-file-remove" onClick={reset} aria-label="Remove file" title="Remove file">
+                ×
+              </button>
+            )}
+          </div>
+          <PdfPagePreview file={file} />
+        </div>
+      </div>
+
+      <aside className="workspace-sidebar">
+        <div className="workspace-sidebar-body">
+          <h1>Split</h1>
 
           <fieldset className="choices" disabled={busy}>
             <legend>Split mode</legend>
@@ -220,20 +250,20 @@ export default function SplitPage() {
             </p>
           )}
 
-          <div className="actions">
-            <button className="btn btn-large" onClick={split} disabled={busy || invalid}>
-              {busy ? 'Splitting…' : 'Split PDF'}
-              {!busy && <BtnIcon kind="next" />}
-            </button>
-          </div>
-        </>
-      )}
-
-      {error && (
-        <div className="error" role="alert">
-          {error}
+          {error && (
+            <div className="error" role="alert">
+              {error}
+            </div>
+          )}
         </div>
-      )}
+
+        <div className="workspace-sidebar-footer">
+          <button className="btn btn-large" onClick={split} disabled={busy || invalid}>
+            {busy ? 'Splitting…' : 'Split PDF'}
+            {!busy && <BtnIcon kind="next" />}
+          </button>
+        </div>
+      </aside>
     </section>
   )
 }

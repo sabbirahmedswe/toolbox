@@ -9,7 +9,7 @@ tools (compression, conversion) are planned:
   left sharp.
 - **Image to PDF**: turn JPG and PNG images into a PDF, one image per page.
 - **Split PDF**: split a PDF into one file per page range (such as `1-3, 5, 8-10`) or every N pages, or extract
-  the chosen pages into a single PDF.
+  the chosen pages into a single PDF. A numbered preview of the pages helps pick the ranges.
 
 There are no accounts and nothing is stored. Each file is processed in a temporary folder that is
 deleted before the response is sent.
