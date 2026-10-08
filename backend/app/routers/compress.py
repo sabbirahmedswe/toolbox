@@ -1,5 +1,4 @@
 import time
-from pathlib import PurePath
 from typing import get_args
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
@@ -8,7 +7,7 @@ from fastapi.concurrency import run_in_threadpool
 from app import config
 from app.errors import ProcessingError
 from app.services.compress import GhostscriptMissing, Level, check_compressible, compress_pdf, estimate_size, too_long
-from app.utils.files import PDF, attachment, save_upload, workdir
+from app.utils.files import PDF, attachment, output_stem, save_upload, workdir
 from app.utils.limits import JobLimiter
 
 router = APIRouter()
@@ -16,13 +15,6 @@ router = APIRouter()
 GS_MISSING = "Compression is unavailable: Ghostscript is not installed on the server."
 
 limiter = JobLimiter(lambda: config.MAX_CONCURRENT_COMPRESSIONS)
-
-
-def output_name(upload_name: str) -> str:
-    """`report.pdf` -> `report_compressed.pdf`, with a fallback for names like `.pdf`."""
-    name = PurePath(upload_name).name
-    stem = name[:-4] if name.lower().endswith(".pdf") else name
-    return f"{stem or 'document'}_compressed.pdf"
 
 
 @router.post(
@@ -50,7 +42,7 @@ async def compress(
         data,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": attachment(output_name(name)),
+            "Content-Disposition": attachment(f"{output_stem(name)}_compressed.pdf"),
             "X-Original-Size": str(original_size),
             "X-Compressed-Size": str(len(data)),
         },

@@ -2,7 +2,7 @@ import shutil
 import tempfile
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import BinaryIO
 from urllib.parse import quote
 
@@ -26,6 +26,23 @@ def attachment(filename: str) -> str:
     """Content-Disposition value with an ASCII fallback plus the UTF-8 name (RFC 6266)."""
     fallback = "".join(c if c.isascii() and c.isprintable() and c not in '"\\' else "_" for c in filename)
     return f"attachment; filename=\"{fallback}\"; filename*=UTF-8''{quote(filename, safe='')}"
+
+
+# Path separators and characters Windows forbids in file names, so names are also safe as ZIP entries.
+_UNSAFE_NAME_CHARS = set('/\\:*?"<>|')
+_RESERVED_NAMES = {"CON", "PRN", "AUX", "NUL"} | {f"{d}{n}" for d in ("COM", "LPT") for n in "123456789¹²³"}
+
+
+def output_stem(upload_name: str) -> str:
+    """`report.pdf` -> `report`, for naming results. Unsafe characters become `_`; `.pdf` -> `document`."""
+    name = PurePath(upload_name).name
+    stem = name[:-4] if name.lower().endswith(".pdf") else name
+    stem = "".join("_" if c in _UNSAFE_NAME_CHARS or not c.isprintable() else c for c in stem)
+    stem = stem[:100].strip(" .") or "document"
+    # Windows treats CON, CON.pdf and so on as devices, so a result like CON.pdf_1.pdf can't be extracted there.
+    if stem.split(".")[0].rstrip(" ").upper() in _RESERVED_NAMES:
+        stem = f"_{stem}"
+    return stem
 
 
 def make_workdir() -> Path:

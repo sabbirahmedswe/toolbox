@@ -18,7 +18,7 @@ export default function Home() {
           Everyday file tools, <em>all in one place.</em>
         </h1>
         <p className="hero-lede">
-          Merge, compress and convert your documents and images in seconds. Each file is processed in a temporary
+          Merge, split, compress and convert your documents and images in seconds. Each file is processed in a temporary
           folder and deleted as soon as you get the result.
         </p>
       </section>

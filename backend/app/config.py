@@ -35,3 +35,8 @@ MAX_CONCURRENT_COMPRESSIONS = _int_env("MAX_CONCURRENT_COMPRESSIONS", os.cpu_cou
 MAX_IMAGE_PIXELS = _int_env("MAX_IMAGE_PIXELS", 100_000_000)
 # Each job may hold a few full-size decoded copies of a large image, so keep this small.
 MAX_CONCURRENT_IMAGE_JOBS = _int_env("MAX_CONCURRENT_IMAGE_JOBS", min(os.cpu_count() or 2, 4))
+# Split: most PDFs one split may produce, and the largest total size of those PDFs. Each part gets its own
+# copy of the fonts and images its pages share, so a split can be much larger than the original.
+MAX_SPLIT_PARTS = _int_env("MAX_SPLIT_PARTS", 500)
+MAX_SPLIT_OUTPUT_MB = _int_env("MAX_SPLIT_OUTPUT_MB", 200)
+MAX_CONCURRENT_SPLITS = _int_env("MAX_CONCURRENT_SPLITS", min(os.cpu_count() or 2, 4))

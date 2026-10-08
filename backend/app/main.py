@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from app import config
 from app.errors import ProcessingError
 from app.middleware import RequestSizeLimitMiddleware
-from app.routers import compress, images, merge
+from app.routers import compress, images, merge, split
 from app.services.compress import ghostscript_version
 
 logger = logging.getLogger("uvicorn.error")
@@ -46,6 +46,7 @@ async def processing_error_handler(_: Request, exc: ProcessingError) -> JSONResp
 app.include_router(merge.router, prefix="/api", tags=["merge"])
 app.include_router(compress.router, prefix="/api", tags=["compress"])
 app.include_router(images.router, prefix="/api", tags=["images"])
+app.include_router(split.router, prefix="/api", tags=["split"])
 
 
 @app.get("/api/health")

@@ -1,5 +1,7 @@
 import io
 
+import pytest
+
 from pypdf import PdfReader
 
 from app import config
@@ -134,6 +136,28 @@ def test_merge_reports_damage_found_while_writing(client, monkeypatch):
 
     files = [pdf_upload("a.pdf", make_pdf([100])), pdf_upload("b.pdf", make_pdf([200]))]  # built before patching
     monkeypatch.setattr("app.services.merge.PdfWriter.write", broken_write)
+    res = client.post("/api/merge", files=files)
+    assert res.status_code == 400
+    assert "damaged" in res.json()["detail"]
+
+
+def test_merge_does_not_report_running_out_of_memory_as_damage(client, monkeypatch):
+    def exhausted(self, *args, **kwargs):
+        raise MemoryError
+
+    files = [pdf_upload("a.pdf", make_pdf([100])), pdf_upload("b.pdf", make_pdf([200]))]  # built before patching
+    monkeypatch.setattr("app.services.merge.PdfWriter.write", exhausted)
+    with pytest.raises(MemoryError):
+        client.post("/api/merge", files=files)
+
+
+def test_merge_reports_recursion_error_as_damage(client, monkeypatch):
+    # pypdf hits this on deeply nested objects in the upload: a bad file, not a server problem.
+    def too_deep(self, *args, **kwargs):
+        raise RecursionError
+
+    files = [pdf_upload("a.pdf", make_pdf([100])), pdf_upload("b.pdf", make_pdf([200]))]  # built before patching
+    monkeypatch.setattr("app.services.merge.PdfWriter.write", too_deep)
     res = client.post("/api/merge", files=files)
     assert res.status_code == 400
     assert "damaged" in res.json()["detail"]

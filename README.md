@@ -8,6 +8,8 @@ tools (compression, conversion) are planned:
   or 120 dpi (extreme) are downsampled to it, and colour images are stored as JPEG; text and vector graphics are
   left sharp.
 - **Image to PDF**: turn JPG and PNG images into a PDF, one image per page.
+- **Split PDF**: split a PDF into one file per page range (such as `1-3, 5, 8-10`) or every N pages, or extract
+  the chosen pages into a single PDF.
 
 There are no accounts and nothing is stored. Each file is processed in a temporary folder that is
 deleted before the response is sent.
@@ -74,6 +76,9 @@ to start otherwise.
 | `MAX_IMAGE_PIXELS` | `100000000` | Largest image (width × height) for Image to PDF |
 | `MAX_CONCURRENT_COMPRESSIONS` | CPU count | Compressions and size estimates at once; extra requests get `503`. An estimate only starts if a slot stays free for a compression, so with `1` there are no estimates |
 | `MAX_CONCURRENT_IMAGE_JOBS` | `min(CPU count, 4)` | Image conversions at once; extra requests get `503` |
+| `MAX_SPLIT_PARTS` | `500` | Most PDFs one split may produce |
+| `MAX_SPLIT_OUTPUT_MB` | `200` | Largest total size of a split's PDFs (each part keeps its own copy of shared fonts and images, so this can exceed the original's size) |
+| `MAX_CONCURRENT_SPLITS` | `min(CPU count, 4)` | Splits at once; extra requests get `503` |
 | `GS_TIMEOUT_SECONDS` | `120` | Time limit for one compression, or for all three levels of a size estimate |
 | `GS_MEMORY_LIMIT_MB` | `2048` | Memory limit for one Ghostscript run |
 | `GS_BINARY` | `gs` | Ghostscript executable |
@@ -85,12 +90,13 @@ in `frontend/nginx.conf`.
 
 ## API
 
-All endpoints take `multipart/form-data` and return the resulting PDF as a download. Errors return
+All endpoints take `multipart/form-data` and return the resulting PDF (or ZIP) as a download. Errors return
 JSON `{"detail": "..."}` with status 400, 413, 422 or 503.
 
 | Endpoint | Fields | Result |
 |---|---|---|
 | `POST /api/merge` | `files` (2 or more PDFs, in order) | `merged.pdf` |
+| `POST /api/split` | `file` (one PDF), `mode` = `ranges` (default) \| `every`, `ranges` (for `ranges`: comma-separated, non-overlapping, e.g. `1-3, 5, 8-10`; at most 1000 characters), `every` (for `every`: pages per file, default `1`), `merge` = `true` \| `false` (default; `ranges` only) | One PDF per range or chunk, as `<name>_split.zip`. A single result is returned as `<name>_<range>.pdf`, and with `merge=true` all ranges go into `<name>_split.pdf` |
 | `POST /api/compress` | `file` (one PDF), `level` = `low` \| `medium` (default) \| `high` | `<name>_compressed.pdf`, plus `X-Original-Size` / `X-Compressed-Size` headers |
 | `POST /api/compress/estimate` | `file` (one PDF) | `{"original_size": n, "sizes": {"low": n, "medium": n, "high": n}}`: the exact size `/api/compress` returns at each level |
 | `POST /api/images-to-pdf` | `files` (1 or more JPEG/PNG, in order) | `images.pdf` |

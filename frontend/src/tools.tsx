@@ -2,9 +2,11 @@ import type { ReactElement } from 'react'
 import compressIcon from './assets/icons/compress.svg'
 import imageToPdfIcon from './assets/icons/image-to-pdf.svg'
 import mergeIcon from './assets/icons/merge.svg'
+import splitIcon from './assets/icons/split.svg'
 import CompressPage from './pages/CompressPage'
 import ImagesToPdfPage from './pages/ImagesToPdfPage'
 import MergePage from './pages/MergePage'
+import SplitPage from './pages/SplitPage'
 
 export interface Tool {
   path: string
@@ -36,5 +38,12 @@ export const TOOLS: Tool[] = [
     description: 'Convert JPG and PNG images to PDF in seconds, in any order you like.',
     icon: imageToPdfIcon,
     page: <ImagesToPdfPage />,
+  },
+  {
+    path: '/split',
+    title: 'Split PDF',
+    description: 'Split a PDF by page ranges or every few pages, or pull out just the pages you need.',
+    icon: splitIcon,
+    page: <SplitPage />,
   },
 ]

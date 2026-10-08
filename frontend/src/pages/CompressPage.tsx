@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { downloadBlob, formatBytes, postForFile, postForJson, type FileResult } from '../api/client'
 import BtnIcon from '../components/BtnIcon'
 import FileDropzone from '../components/FileDropzone'
+import SelectedFile from '../components/SelectedFile'
 import { addWithinLimits } from '../fileItems'
 
 const ACCEPT = { 'application/pdf': ['.pdf'] }
@@ -143,25 +144,12 @@ export default function CompressPage() {
         />
       ) : (
         <>
-          <div className="selected-file">
-            <div className="file-badge">PDF</div>
-            <div className="selected-file-info">
-              <div className="file-name" title={file.name}>
-                {file.name}
-              </div>
-              <div className="file-size">{formatBytes(file.size)}</div>
-            </div>
-            {!busy && (
-              <button className="btn btn-secondary btn-small" onClick={reset}>
-                Change
-              </button>
-            )}
-          </div>
+          <SelectedFile file={file} onChange={busy ? undefined : reset} />
 
-          <fieldset className="levels" disabled={busy}>
+          <fieldset className="choices" disabled={busy}>
             <legend>Compression level</legend>
             {LEVELS.map((l) => (
-              <label key={l.value} className={`level${level === l.value ? ' level-selected' : ''}`}>
+              <label key={l.value} className={`choice${level === l.value ? ' choice-selected' : ''}`}>
                 <input
                   type="radio"
                   name="level"
@@ -169,7 +157,7 @@ export default function CompressPage() {
                   checked={level === l.value}
                   onChange={() => setLevel(l.value)}
                 />
-                <span className="level-title">{l.title}</span>
+                <span className="choice-title">{l.title}</span>
                 <span className="muted">{l.description}</span>
                 <LevelEstimate original={file.size} size={current?.sizes?.[l.value]} loading={!current} />
               </label>

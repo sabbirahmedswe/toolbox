@@ -1,9 +1,9 @@
-import type { PDFDocumentLoadingTask, RenderTask } from 'pdfjs-dist'
+import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
 type PdfJs = typeof import('pdfjs-dist')
 
-// pdf.js is ~1 MB, so it's only loaded once the first PDF thumbnail is needed.
+// pdf.js is ~1 MB, so it's only loaded once the first PDF is opened.
 let lib: Promise<PdfJs> | undefined
 
 function loadPdfJs() {
@@ -14,7 +14,7 @@ function loadPdfJs() {
   return lib
 }
 
-// Render a few files at a time so dropping 20 large PDFs doesn't load them all into memory at once.
+// Open a few files at a time so dropping 20 large PDFs doesn't load them all into memory at once.
 const MAX_CONCURRENT = 2
 let active = 0
 const waiting: (() => void)[] = []
@@ -66,15 +66,14 @@ const dataUrl = (pdfjs: PdfJs, dir: string) =>
   new URL(`${import.meta.env.BASE_URL}pdfjs-${pdfjs.version}/${dir}/`, location.href).href
 
 /**
- * Draw the first page of `file` into `canvas`, scaled to fit a `width` x `height` CSS box.
+ * Open `file` with pdf.js in its own worker and run `use` on the document.
  * Rejects if the PDF can't be read (e.g. encrypted or corrupt), takes too long, or `signal` aborts.
  */
-export async function renderPdfThumbnail(
+async function withPdf<T>(
   file: File,
-  canvas: HTMLCanvasElement,
-  box: { width: number; height: number },
   signal: AbortSignal,
-): Promise<void> {
+  use: (doc: PDFDocumentProxy, stop: AbortSignal) => Promise<T>,
+): Promise<T> {
   await acquireSlot(signal)
   try {
     const pdfjs = await abortable(loadPdfJs(), signal)
@@ -85,9 +84,8 @@ export async function renderPdfThumbnail(
     const webWorker = new Worker(workerUrl, { type: 'module' })
     const worker = pdfjs.PDFWorker.create({ port: webWorker })
     let task: PDFDocumentLoadingTask | undefined
-    let render: RenderTask | undefined
     try {
-      await abortable(
+      return await abortable(
         (async () => {
           const data = new Uint8Array(await file.arrayBuffer())
           stop.throwIfAborted()
@@ -101,23 +99,11 @@ export async function renderPdfThumbnail(
             iccUrl: dataUrl(pdfjs, 'iccs'),
             standardFontDataUrl: dataUrl(pdfjs, 'standard_fonts'),
           })
-          const doc = await task.promise
-          const page = await doc.getPage(1)
-          stop.throwIfAborted()
-          const base = page.getViewport({ scale: 1 })
-          const dpr = Math.min(window.devicePixelRatio || 1, 2)
-          const viewport = page.getViewport({
-            scale: Math.min(box.width / base.width, box.height / base.height) * dpr,
-          })
-          canvas.width = Math.max(1, Math.floor(viewport.width))
-          canvas.height = Math.max(1, Math.floor(viewport.height))
-          render = page.render({ canvas, viewport })
-          await render.promise
+          return use(await task.promise, stop)
         })(),
         stop,
       )
     } finally {
-      render?.cancel()
       // Not awaited: a stuck worker never answers, and terminating it below frees everything anyway.
       task?.destroy().catch(() => {})
       worker.destroy()
@@ -126,4 +112,41 @@ export async function renderPdfThumbnail(
   } finally {
     releaseSlot()
   }
+}
+
+/**
+ * Draw the first page of `file` into `canvas`, scaled to fit a `width` x `height` CSS box.
+ * Rejects if the PDF can't be read (e.g. encrypted or corrupt), takes too long, or `signal` aborts.
+ */
+export function renderPdfThumbnail(
+  file: File,
+  canvas: HTMLCanvasElement,
+  box: { width: number; height: number },
+  signal: AbortSignal,
+): Promise<void> {
+  return withPdf(file, signal, async (doc, stop) => {
+    const page = await doc.getPage(1)
+    stop.throwIfAborted()
+    const base = page.getViewport({ scale: 1 })
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const viewport = page.getViewport({
+      scale: Math.min(box.width / base.width, box.height / base.height) * dpr,
+    })
+    canvas.width = Math.max(1, Math.floor(viewport.width))
+    canvas.height = Math.max(1, Math.floor(viewport.height))
+    const render = page.render({ canvas, viewport })
+    // Rendering runs on the main thread, so stop it as soon as the caller gives up or the timeout fires.
+    const cancel = () => render.cancel()
+    stop.addEventListener('abort', cancel, { once: true })
+    try {
+      await render.promise
+    } finally {
+      stop.removeEventListener('abort', cancel)
+    }
+  })
+}
+
+/** Number of pages in `file`. Rejects like `renderPdfThumbnail`. */
+export function countPdfPages(file: File, signal: AbortSignal): Promise<number> {
+  return withPdf(file, signal, async (doc) => doc.numPages)
 }

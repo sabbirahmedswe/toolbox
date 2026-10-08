@@ -9,7 +9,7 @@ from typing import Literal
 
 from app import config
 from app.errors import ProcessingError
-from app.services.merge import open_pdf
+from app.services.pdf import open_pdf
 
 logger = logging.getLogger(__name__)
 
