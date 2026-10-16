@@ -1,28 +1,17 @@
-import { Link, NavLink, Route, Routes } from 'react-router-dom'
+import { Link, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
-import NavGroup from './components/NavGroup'
+import Logo from './components/Logo'
 import ThemeToggle from './components/ThemeToggle'
-import { NAV, TOOLS } from './tools'
+import { TOOLS } from './tools'
 
 export default function App() {
   return (
     <div className="app">
       <header className="header">
         <Link to="/" className="logo">
-          <img src="/favicon.svg" alt="" className="logo-icon" />
+          <Logo />
           <span>Toolbox</span>
         </Link>
-        <nav>
-          {NAV.map((item) =>
-            'group' in item ? (
-              <NavGroup key={item.group} title={item.group} sections={item.sections} />
-            ) : (
-              <NavLink key={item.tool.path} to={item.tool.path}>
-                {item.tool.title}
-              </NavLink>
-            ),
-          )}
-        </nav>
         <ThemeToggle />
       </header>
       <main className="main">

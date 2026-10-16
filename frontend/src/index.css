@@ -2,8 +2,9 @@
   --bg: #f6f4ef;
   --surface: #ffffff;
   --text: #1f1f1f;
-  --nav-text: #000000;
-  --logo-text: #000000;
+  --heading-text: #000000;
+  --logo-text: #2e2e2e;
+  --logo-cutout: #ffffff;
   --muted: #6b6b6b;
   --text-secondary: #4a4a4a;
   --border: #e0e0e0;
@@ -38,8 +39,9 @@
   --bg: #000000;
   --surface: #121212;
   --text: #e6e6e6;
-  --nav-text: #ffffff;
+  --heading-text: #ffffff;
   --logo-text: #ffffff;
+  --logo-cutout: #000000;
   --muted: #9a9a9a;
   --text-secondary: #bdbdbd;
   --border: #2b2b2b;
@@ -75,11 +77,11 @@ h1, h2, h3 { margin: 0; }
 .header {
   display: flex;
   align-items: center;
-  gap: 3rem;
+  justify-content: space-between;
+  gap: 1rem;
   padding: 0.9rem 2rem;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
 }
 .logo {
   font-family: 'DM Serif Display', Georgia, serif;
@@ -87,16 +89,15 @@ h1, h2, h3 { margin: 0; }
   display: inline-flex; align-items: center; gap: 0.6rem;
   color: var(--logo-text);
 }
-.logo span { position: relative; top: -0.06em; } /* optical centring: lift the lowercase x-height to the nav links' middle */
+.logo span { position: relative; top: -0.06em; } /* optical centring: lift the lowercase x-height to the icon's middle */
 .logo-icon { width: 2rem; height: 2rem; flex: none; }
-.header nav { display: flex; align-items: center; gap: 3.5rem; flex-wrap: wrap; }
-.header nav a { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: var(--nav-text); }
-.header nav a:hover { text-decoration: underline; text-underline-offset: 0.35em; }
-/* Sun/moon theme switch, pushed to the header's right end. The icon shows the theme a click switches to. */
+.logo-tile { fill: currentColor; }
+.logo-layers { stroke: var(--logo-cutout); }
+/* Sun/moon theme switch, at the header's right end. The icon shows the theme a click switches to. */
 .theme-toggle {
-  margin-left: auto; width: 2.1rem; height: 2.1rem; flex: none; padding: 0;
+  width: 2.1rem; height: 2.1rem; flex: none; padding: 0;
   display: grid; place-items: center; border: none; border-radius: 50%;
-  background: none; color: var(--nav-text); cursor: pointer; transition: background-color 0.15s;
+  background: none; color: var(--heading-text); cursor: pointer; transition: background-color 0.15s;
 }
 .theme-toggle:hover { background: var(--border); }
 .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -108,55 +109,6 @@ h1, h2, h3 { margin: 0; }
 :root[data-theme='light'] .theme-toggle-moon { transform: none; opacity: 1; }
 :root[data-theme='light'] .theme-toggle-sun { transform: rotate(90deg) scale(0.4); opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .theme-toggle svg { transition: none; } }
-/* The current tool's link (NavLink sets .active and aria-current="page"). */
-.header nav a.active { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.35em; }
-
-/* A dropdown in the header nav. It opens on hover, or on click/tap and keyboard (.nav-group-open). */
-.nav-group { position: relative; z-index: 10; }
-.nav-group-button {
-  display: inline-flex; align-items: center; gap: 0.3rem; padding: 0; border: none; background: none; cursor: pointer;
-  font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: var(--nav-text);
-}
-.nav-group-button svg {
-  width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round;
-  stroke-linejoin: round; transition: transform 0.15s;
-}
-.nav-group-button:hover, .nav-group-button.active, .nav-group-open .nav-group-button {
-  text-decoration: underline; text-underline-offset: 0.35em;
-}
-.nav-group-button.active { text-decoration-thickness: 2px; }
-.nav-group-open .nav-group-button svg { transform: rotate(180deg); }
-.nav-group-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
-/* The top padding bridges the gap below the button, so the pointer can reach the menu without it closing. */
-.nav-menu {
-  display: none; position: absolute; top: 100%; left: -1rem; padding-top: 0.75rem;
-}
-.nav-group-open .nav-menu { display: block; }
-@media (hover: hover) {
-  .nav-group:hover .nav-menu { display: block; }
-  .nav-group:hover .nav-group-button svg { transform: rotate(180deg); }
-}
-.nav-menu-panel {
-  display: grid; grid-template-columns: repeat(2, minmax(13rem, 1fr)); gap: 1.5rem; padding: 1.25rem;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); box-shadow: 0 10px 30px rgb(0 0 0 / 0.12);
-}
-.nav-menu-section h2 {
-  margin: 0 0 0.5rem; padding: 0 0.75rem 0.5rem; border-bottom: 1px solid var(--border);
-  font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted);
-}
-.header .nav-menu a {
-  display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 0.75rem; border-radius: 8px;
-  text-transform: none; font-size: 0.9rem;
-}
-.header .nav-menu a:hover { background: var(--accent-soft); }
-.nav-menu-empty { margin: 0; padding: 0.6rem 0.75rem; font-size: 0.85rem; color: var(--muted); }
-/* One column on narrow screens, and kept within the window. */
-@media (max-width: 600px) {
-  .nav-menu { left: auto; right: -1rem; }
-  .nav-menu-panel { grid-template-columns: minmax(13rem, 1fr); }
-}
-.nav-menu img { width: 1.6rem; height: 1.6rem; flex: none; }
 
 .main { max-width: 1240px; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
 
@@ -184,7 +136,7 @@ h1, h2, h3 { margin: 0; }
 .hero h1 {
   font-family: 'DM Serif Display', Georgia, serif; font-weight: 400;
   font-size: clamp(2.2rem, 6vw, 3.75rem); line-height: 1.05; letter-spacing: -0.015em;
-  color: var(--nav-text); max-width: 14ch; margin: 0 auto 1.25rem;
+  color: var(--heading-text); max-width: 14ch; margin: 0 auto 1.25rem;
 }
 .hero-lede { color: var(--muted); font-size: 1.1rem; line-height: 1.6; max-width: 34rem; margin: 0 auto; }
 
@@ -195,7 +147,7 @@ h1, h2, h3 { margin: 0; }
   filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.12));
 }
 /* The icon files are black-on-white; flip them for the dark theme. */
-:root[data-theme='dark'] .tool-icon, :root[data-theme='dark'] .nav-menu img { filter: invert(1); }
+:root[data-theme='dark'] .tool-icon { filter: invert(1); }
 :root[data-theme='dark'] .hero-art img { filter: invert(1) drop-shadow(0 8px 14px rgb(255 255 255 / 0.08)); }
 .hero-art img:nth-child(1) { left: 4%; top: 22%; transform: rotate(-12deg); }
 .hero-art img:nth-child(2) { right: 5%; top: 14%; transform: rotate(10deg); height: 56px; }
