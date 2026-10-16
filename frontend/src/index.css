@@ -84,13 +84,12 @@ h1, h2, h3 { margin: 0; }
   border-bottom: 1px solid var(--border);
 }
 .logo {
-  font-family: 'DM Serif Display', Georgia, serif;
-  font-weight: 400; font-size: 2rem; letter-spacing: -0.01em; line-height: 1;
+  font-family: 'Geist', 'Inter Variable', system-ui, sans-serif;
+  font-weight: 500; font-size: 1.35rem; letter-spacing: -0.03em; line-height: 1;
   display: inline-flex; align-items: center; gap: 0.6rem;
   color: var(--logo-text);
 }
-.logo span { position: relative; top: -0.06em; } /* optical centring: lift the lowercase x-height to the icon's middle */
-.logo-icon { width: 2rem; height: 2rem; flex: none; }
+.logo-icon { width: 1.7rem; height: 1.7rem; flex: none; }
 .logo-tile { fill: currentColor; }
 .logo-layers { stroke: var(--logo-cutout); }
 /* Sun/moon theme switch, at the header's right end. The icon shows the theme a click switches to. */

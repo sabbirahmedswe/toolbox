@@ -10,7 +10,7 @@ export default function App() {
       <header className="header">
         <Link to="/" className="logo">
           <Logo />
-          <span>Toolbox</span>
+          <span>toolbox</span>
         </Link>
         <ThemeToggle />
       </header>

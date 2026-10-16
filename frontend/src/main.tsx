@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import '@fontsource/geist/500.css'
 import '@fontsource-variable/inter'
 import '@fontsource/dm-serif-display'
 import '@fontsource/dm-serif-display/400-italic.css'
