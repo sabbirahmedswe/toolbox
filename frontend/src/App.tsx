@@ -2,6 +2,7 @@ import { Link, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import Logo from './components/Logo'
 import ThemeToggle from './components/ThemeToggle'
+import ToolSearch from './components/ToolSearch'
 import { TOOLS } from './tools'
 
 export default function App() {
@@ -12,7 +13,10 @@ export default function App() {
           <Logo />
           <span>toolbox</span>
         </Link>
-        <ThemeToggle />
+        <div className="header-actions">
+          <ToolSearch />
+          <ThemeToggle />
+        </div>
       </header>
       <main className="main">
         <Routes>

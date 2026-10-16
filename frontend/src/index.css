@@ -28,6 +28,7 @@
   --tile-border: #d6d2c7;
   --card-hover-bg: #f1eee6;
   --card-hover-border: #c4beb0;
+  --palette-title: #333333;
   --radius: 10px;
   color-scheme: light;
   font-family: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -65,6 +66,7 @@
   --tile-border: #333333;
   --card-hover-bg: #1a1a1a;
   --card-hover-border: #4d4d4d;
+  --palette-title: #ffffff;
   color-scheme: dark;
 }
 
@@ -92,6 +94,98 @@ h1, h2, h3 { margin: 0; }
 .logo-icon { width: 1.7rem; height: 1.7rem; flex: none; }
 .logo-tile { fill: currentColor; }
 .logo-layers { stroke: var(--logo-cutout); }
+.header-actions { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; }
+/* Search trigger in the header: looks like a field, opens the command palette (see ToolSearch). */
+.search-trigger {
+  flex: 1; min-width: 0; max-width: 20rem; height: 2.25rem; padding: 0 0.45rem 0 0.75rem;
+  display: flex; align-items: center; gap: 0.55rem;
+  border: 1px solid var(--border); border-radius: 999px; background: var(--bg);
+  color: var(--muted); font-size: 0.9rem; text-align: left; cursor: pointer; transition: border-color 0.15s;
+}
+.search-trigger:hover { border-color: var(--card-hover-border); }
+.search-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.search-trigger-icon, .palette-field-icon {
+  width: 1rem; height: 1rem; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round;
+}
+.search-trigger-label { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.search-trigger-kbd, .palette kbd, .palette .palette-esc {
+  display: inline-grid; place-items: center; min-width: 1.35rem; height: 1.35rem; padding: 0 0.3rem;
+  font: 500 0.75rem/1 'Geist', 'Inter Variable', system-ui, sans-serif; color: var(--text-secondary);
+  border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; background: var(--surface);
+}
+
+/* Command palette: a modal <dialog> near the top of the viewport. */
+.palette {
+  width: min(36rem, calc(100% - 2rem)); max-height: min(32rem, calc(100dvh - 4rem));
+  margin: 12vh auto auto; padding: 0; border: none; background: none; color: var(--text); overflow: visible;
+}
+.palette::backdrop { background: rgb(0 0 0 / 0.35); backdrop-filter: blur(3px); }
+:root[data-theme='dark'] .palette::backdrop { background: rgb(0 0 0 / 0.6); }
+.palette-panel {
+  display: flex; flex-direction: column; max-height: inherit; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: 0 24px 60px -12px rgb(0 0 0 / 0.35);
+}
+.palette[open] .palette-panel { animation: palette-in 0.16s ease-out; }
+@keyframes palette-in { from { opacity: 0; transform: translateY(-6px) scale(0.985); } }
+@media (prefers-reduced-motion: reduce) { .palette[open] .palette-panel { animation: none; } }
+
+.palette-field {
+  display: flex; align-items: center; gap: 0.7rem; padding: 0 0.9rem 0 1.1rem;
+  border-bottom: 1px solid var(--border); color: var(--muted);
+}
+.palette-field-icon { width: 1.15rem; height: 1.15rem; }
+.palette-input {
+  flex: 1; min-width: 0; height: 3.5rem; padding: 0; border: none; background: none;
+  color: var(--heading-text); font-size: 1.05rem;
+}
+.palette-input::placeholder { color: var(--muted); }
+.palette-input:focus { outline: none; }
+.palette .palette-esc { flex: none; height: 1.6rem; padding: 0 0.45rem; cursor: pointer; }
+.palette-esc:hover { color: var(--heading-text); }
+.palette-esc:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.palette-list {
+  flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 0.3rem;
+  margin: 0; padding: 0.4rem; list-style: none;
+}
+.palette-option {
+  display: flex; align-items: center; gap: 0.8rem; padding: 0.55rem 0.65rem;
+  border-radius: 9px; cursor: pointer;
+}
+.palette-option[aria-selected='true'] { background: var(--card-hover-bg); }
+.palette-option-tile {
+  width: 1.9rem; height: 1.9rem; flex: none; display: grid; place-items: center;
+  border-radius: 7px; background: var(--tile-bg); border: 1px solid var(--tile-border);
+}
+.palette-option-tile img { width: 1rem; height: 1rem; }
+:root[data-theme='dark'] .palette-option-tile img { filter: invert(1); }
+/* Dark mode: the tile sits darker than the panel and lifts to the usual tile colour on the highlighted row. */
+:root[data-theme='dark'] .palette-option-tile { background: var(--bg); }
+:root[data-theme='dark'] .palette-option[aria-selected='true'] .palette-option-tile { background: var(--tile-bg); }
+.palette-option-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.palette-option-title { font-weight: 600; font-size: 0.875rem; color: var(--palette-title); }
+.palette-option-desc {
+  font-size: 0.76rem; color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.palette-option .palette-option-enter { visibility: hidden; flex: none; }
+.palette-option[aria-selected='true'] .palette-option-enter { visibility: visible; }
+.palette-empty { margin: 0; padding: 1.6rem 1.2rem; font-size: 0.92rem; color: var(--muted); text-align: center; }
+
+.palette-footer {
+  display: flex; gap: 1.1rem; padding: 0.6rem 1.1rem; border-top: 1px solid var(--border);
+  background: var(--surface); font-size: 0.78rem; color: var(--muted);
+}
+.palette-footer span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.palette-footer kbd { min-width: 1.2rem; height: 1.2rem; font-size: 0.7rem; }
+
+@media (max-width: 600px) {
+  .header { padding: 0.75rem 1rem; }
+  .search-trigger-kbd, .palette-footer { display: none; }
+  .search-trigger { padding-right: 0.75rem; }
+  .palette { margin-top: 1rem; }
+}
 /* Sun/moon theme switch, at the header's right end. The icon shows the theme a click switches to. */
 .theme-toggle {
   width: 2.1rem; height: 2.1rem; flex: none; padding: 0;
