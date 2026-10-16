@@ -46,8 +46,7 @@ Setup and run instructions are in `README.md`. These are the forms to use from C
 
 ## Frontend conventions
 
-- Each tool is one entry in `src/tools.tsx` (route, card and the home hero's decorative icons are derived
-  from it; the hero shows the first three icons).
+- Each tool is one entry in `src/tools.tsx` (its route and home-page card are derived from it).
 - Keep site-wide copy (hero, page title) tool-agnostic: the toolbox isn't PDF-only.
 - Use `postForFile` / `downloadBlob` from `src/api/client.ts`, and `FileDropzone` / `SortableFileList` for uploads.
 - Plain CSS in `src/index.css` using the `:root` variables; no UI library.

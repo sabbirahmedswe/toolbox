@@ -1,4 +1,4 @@
-import { Link, Route, Routes } from 'react-router-dom'
+import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import Logo from './components/Logo'
 import ThemeToggle from './components/ThemeToggle'
@@ -6,9 +6,10 @@ import ToolSearch from './components/ToolSearch'
 import { TOOLS } from './tools'
 
 export default function App() {
+  const { pathname } = useLocation()
   return (
     <div className="app">
-      <header className="header">
+      <header className={pathname === '/' ? 'header' : 'header header-wide'}>
         <Link to="/" className="logo">
           <Logo />
           <span>toolbox</span>

@@ -5,21 +5,10 @@ export default function Home() {
   return (
     <>
       <section className="hero">
-        <div className="hero-art" aria-hidden="true">
-          {TOOLS.map((t) => (
-            <img key={t.path} src={t.icon} alt="" />
-          ))}
-        </div>
-        <p className="hero-eyebrow">
-          <span className="hero-dot" />
-          No sign-up · Nothing stored
-        </p>
-        <h1>
-          Everyday file tools, <em>all in one place.</em>
-        </h1>
+        <h1>Everyday file tools, all in one place.</h1>
         <p className="hero-lede">
-          Merge, split, compress and convert your documents and images in seconds. Each file is processed in a temporary
-          folder and deleted as soon as you get the result.
+          Merge, split, compress and convert PDFs and images. No sign-up, and your files are deleted before the
+          result reaches you.
         </p>
       </section>
       <section className="tool-grid">
