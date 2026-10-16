@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useBackdropClose } from '../useBackdropClose'
 import { CloseIcon } from './FileCard'
 import PdfThumb from './PdfThumb'
 
@@ -37,20 +38,7 @@ export default function PdfZoom({ file, onClose }: { file: File; onClose: () => 
     }
   }, [])
 
-  // Whether the current press started on the backdrop: a drag from inside the dialog that's released outside it
-  // also clicks the dialog, and mustn't close it.
-  const pressedOutside = useRef(false)
-
-  function onPointerDown(e: PointerEvent<HTMLDialogElement>) {
-    pressedOutside.current = e.target === e.currentTarget && outside(e)
-  }
-
-  function closeOnBackdrop(e: MouseEvent<HTMLDialogElement>) {
-    // Clicks on the dialog's own padding also target the dialog, so check the press and release were outside its
-    // box. Keyboard "clicks" (detail 0) have no position.
-    if (e.target === e.currentTarget && e.detail !== 0 && pressedOutside.current && outside(e)) e.currentTarget.close()
-    pressedOutside.current = false
-  }
+  const backdrop = useBackdropClose(() => dialogRef.current?.close())
 
   return (
     <dialog
@@ -59,8 +47,7 @@ export default function PdfZoom({ file, onClose }: { file: File; onClose: () => 
       aria-label={`First page of ${file.name}`}
       // Every way out goes through close(), so the browser puts focus back on the zoom button.
       onClose={onClose}
-      onPointerDown={onPointerDown}
-      onClick={closeOnBackdrop}
+      {...backdrop}
     >
       <button
         type="button"
@@ -82,9 +69,4 @@ export default function PdfZoom({ file, onClose }: { file: File; onClose: () => 
       />
     </dialog>
   )
-}
-
-function outside(e: MouseEvent<HTMLDialogElement>) {
-  const r = e.currentTarget.getBoundingClientRect()
-  return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom
 }

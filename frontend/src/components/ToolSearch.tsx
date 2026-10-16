@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { TOOLS, type Tool } from '../tools'
+import { useBackdropClose } from '../useBackdropClose'
 
 // Lowercased once so searching doesn't redo it on every keystroke.
 const SEARCHABLE = TOOLS.map((tool) => ({
@@ -22,10 +23,14 @@ function searchTools(query: string): Tool[] {
   return [...titleMatches, ...otherMatches]
 }
 
+// Inputs that take no typed text, so "/" pressed on them can open the palette.
+const NON_TEXT_INPUTS = new Set(['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file', 'image'])
+
 /** True when a key press would type into the focused element, so "/" shouldn't be taken over. */
 function isTyping(target: EventTarget | null): boolean {
+  if (target instanceof HTMLInputElement) return !NON_TEXT_INPUTS.has(target.type)
   if (!(target instanceof HTMLElement)) return false
-  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+  return target.isContentEditable || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement
 }
 
 function SearchIcon({ className }: { className: string }) {
@@ -47,8 +52,6 @@ export default function ToolSearch() {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
-  // Whether the current mouse press started on the backdrop; a drag out of the panel mustn't close it.
-  const pressOnBackdrop = useRef(false)
   const listId = useId()
   const emptyId = useId()
   const [query, setQuery] = useState('')
@@ -66,13 +69,15 @@ export default function ToolSearch() {
   }
 
   const closePalette = () => dialogRef.current?.close()
+  const backdrop = useBackdropClose(closePalette)
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const slash = e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !isTyping(e.target)
-      // Some browser-generated keydowns (e.g. Chrome autofill) have no key.
       const cmdK = (e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey) && !e.altKey
       if (!slash && !cmdK) return
+      // Don't stack on another modal (e.g. the page zoom); it has the focus and its own Esc.
+      if ([...document.querySelectorAll('dialog[open]')].some((d) => d !== dialogRef.current)) return
       e.preventDefault()
       openPalette()
     }
@@ -117,15 +122,7 @@ export default function ToolSearch() {
         ref={dialogRef}
         className="palette"
         aria-label="Search tools"
-        // A click on the dialog element itself (not its contents) is a click on the backdrop.
-        // Both the press and the release must land there, or a text selection dragged out of the field closes it.
-        onMouseDown={(e) => {
-          pressOnBackdrop.current = e.target === e.currentTarget
-        }}
-        onClick={(e) => {
-          if (pressOnBackdrop.current && e.target === e.currentTarget) closePalette()
-          pressOnBackdrop.current = false
-        }}
+        {...backdrop}
       >
         <div className="palette-panel">
           <div className="palette-field">
@@ -148,6 +145,8 @@ export default function ToolSearch() {
               onChange={(e) => {
                 setQuery(e.target.value)
                 setActive(0)
+                // The first result is highlighted, so show it even if the list was scrolled.
+                if (listRef.current) listRef.current.scrollTop = 0
               }}
               onKeyDown={onInputKeyDown}
             />
