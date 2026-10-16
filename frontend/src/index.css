@@ -1,25 +1,32 @@
 :root {
-  --bg: #f5f5fa;
+  --bg: #f6f4ef;
   --surface: #ffffff;
-  --text: #33333b;
-  --nav-text: #222228;
-  --logo-text: #040404;
-  --muted: #707078;
-  --text-secondary: #55555d;
-  --border: #e3e3ea;
-  --accent: #e5322d;
-  --accent-hover: #c8241f;
-  --accent-soft: #fff7f7;
-  --info: #1d5fa8;
-  --info-bg: #eaf3fd;
-  --info-border: #c4dcf5;
-  --hint-bg: #f2f7fd;
-  --hint-border: #d3e4f7;
-  --hint-icon: #2f74c0;
-  --danger-bg: #fdeceb;
-  --danger-text: #9b1c18;
-  --tooltip-bg: #222228;
-  --tooltip-text: #fff;
+  --text: #1f1f1f;
+  --nav-text: #000000;
+  --logo-text: #000000;
+  --muted: #6b6b6b;
+  --text-secondary: #4a4a4a;
+  --border: #e0e0e0;
+  --accent: #000000;
+  --accent-hover: #333333;
+  --accent-soft: #f0f0f0;
+  --on-accent: #ffffff;
+  --info: #1f1f1f;
+  --info-bg: #f4f4f4;
+  --info-border: #d4d4d4;
+  --hint-bg: #f6f6f6;
+  --hint-border: #dedede;
+  --hint-icon: #000000;
+  --danger-bg: #ffffff;
+  --danger-text: #000000;
+  --danger-border: #000000;
+  --tooltip-bg: #000000;
+  --tooltip-text: #ffffff;
+  --card-bg: #fcfbf8;
+  --tile-bg: #ece9e1;
+  --tile-border: #d6d2c7;
+  --card-hover-bg: #e8e8e8;
+  --card-hover-border: #b8b8b8;
   --radius: 10px;
   color-scheme: light;
   font-family: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -28,27 +35,34 @@
 }
 /* Dark theme: set on <html> by the inline script in index.html and by ThemeToggle. */
 :root[data-theme='dark'] {
-  --bg: #17181f;
-  --surface: #20212a;
-  --text: #d6d6de;
-  --nav-text: #ececf2;
-  --logo-text: #f6f6fa;
-  --muted: #9797a3;
-  --text-secondary: #b3b3bd;
-  --border: #33343f;
-  --accent: #f04a42;
-  --accent-hover: #ff6a62;
-  --accent-soft: #2c1e22;
-  --info: #84b4ec;
-  --info-bg: #182638;
-  --info-border: #29425f;
-  --hint-bg: #1a2433;
-  --hint-border: #2a3d56;
-  --hint-icon: #7eaee8;
-  --danger-bg: #3a1d1e;
-  --danger-text: #ffaaa4;
-  --tooltip-bg: #ececf2;
-  --tooltip-text: #17181f;
+  --bg: #000000;
+  --surface: #121212;
+  --text: #e6e6e6;
+  --nav-text: #ffffff;
+  --logo-text: #ffffff;
+  --muted: #9a9a9a;
+  --text-secondary: #bdbdbd;
+  --border: #2b2b2b;
+  --accent: #ffffff;
+  --accent-hover: #d4d4d4;
+  --accent-soft: #1c1c1c;
+  --on-accent: #000000;
+  --info: #e6e6e6;
+  --info-bg: #121212;
+  --info-border: #333333;
+  --hint-bg: #161616;
+  --hint-border: #2e2e2e;
+  --hint-icon: #ffffff;
+  --danger-bg: #000000;
+  --danger-text: #ffffff;
+  --danger-border: #ffffff;
+  --tooltip-bg: #ffffff;
+  --tooltip-text: #000000;
+  --card-bg: #121212;
+  --tile-bg: #1c1c1c;
+  --tile-border: #333333;
+  --card-hover-bg: #0b0b0b;
+  --card-hover-border: #4d4d4d;
   color-scheme: dark;
 }
 
@@ -77,7 +91,7 @@ h1, h2, h3 { margin: 0; }
 .logo-icon { width: 2rem; height: 2rem; flex: none; }
 .header nav { display: flex; align-items: center; gap: 3.5rem; flex-wrap: wrap; }
 .header nav a { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: var(--nav-text); }
-.header nav a:hover { color: var(--accent); }
+.header nav a:hover { text-decoration: underline; text-underline-offset: 0.35em; }
 /* Sun/moon theme switch, pushed to the header's right end. The icon shows the theme a click switches to. */
 .theme-toggle {
   margin-left: auto; width: 2.1rem; height: 2.1rem; flex: none; padding: 0;
@@ -95,7 +109,7 @@ h1, h2, h3 { margin: 0; }
 :root[data-theme='light'] .theme-toggle-sun { transform: rotate(90deg) scale(0.4); opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .theme-toggle svg { transition: none; } }
 /* The current tool's link (NavLink sets .active and aria-current="page"). */
-.header nav a.active { color: var(--accent); }
+.header nav a.active { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.35em; }
 
 /* A dropdown in the header nav. It opens on hover, or on click/tap and keyboard (.nav-group-open). */
 .nav-group { position: relative; z-index: 10; }
@@ -107,7 +121,10 @@ h1, h2, h3 { margin: 0; }
   width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round;
   stroke-linejoin: round; transition: transform 0.15s;
 }
-.nav-group-button:hover, .nav-group-button.active, .nav-group-open .nav-group-button { color: var(--accent); }
+.nav-group-button:hover, .nav-group-button.active, .nav-group-open .nav-group-button {
+  text-decoration: underline; text-underline-offset: 0.35em;
+}
+.nav-group-button.active { text-decoration-thickness: 2px; }
 .nav-group-open .nav-group-button svg { transform: rotate(180deg); }
 .nav-group-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
 /* The top padding bridges the gap below the button, so the pointer can reach the menu without it closing. */
@@ -162,14 +179,13 @@ h1, h2, h3 { margin: 0; }
 }
 .hero-dot {
   width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
-  box-shadow: 0 0 0 3px rgb(229 50 45 / 0.18);
+  box-shadow: 0 0 0 3px var(--border);
 }
 .hero h1 {
   font-family: 'DM Serif Display', Georgia, serif; font-weight: 400;
   font-size: clamp(2.2rem, 6vw, 3.75rem); line-height: 1.05; letter-spacing: -0.015em;
   color: var(--nav-text); max-width: 14ch; margin: 0 auto 1.25rem;
 }
-.hero h1 em { color: var(--accent); }
 .hero-lede { color: var(--muted); font-size: 1.1rem; line-height: 1.6; max-width: 34rem; margin: 0 auto; }
 
 /* the tool icons, scattered and tilted around the headline on wide screens */
@@ -178,6 +194,9 @@ h1, h2, h3 { margin: 0; }
   position: absolute; height: 64px; width: auto;
   filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.12));
 }
+/* The icon files are black-on-white; flip them for the dark theme. */
+:root[data-theme='dark'] .tool-icon, :root[data-theme='dark'] .nav-menu img { filter: invert(1); }
+:root[data-theme='dark'] .hero-art img { filter: invert(1) drop-shadow(0 8px 14px rgb(255 255 255 / 0.08)); }
 .hero-art img:nth-child(1) { left: 4%; top: 22%; transform: rotate(-12deg); }
 .hero-art img:nth-child(2) { right: 5%; top: 14%; transform: rotate(10deg); height: 56px; }
 .hero-art img:nth-child(3) { right: 11%; bottom: 8%; transform: rotate(-6deg); height: 48px; }
@@ -191,26 +210,27 @@ h1, h2, h3 { margin: 0; }
   justify-content: center; gap: 1rem;
 }
 .tool-card {
-  background: var(--surface);
+  background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 18px;
-  aspect-ratio: 6 / 5;
+  aspect-ratio: 2 / 1;
   display: flex; flex-direction: column;
-  padding: 1.75rem;
-  transition: border-color 0.25s ease;
+  padding: 1.25rem 1.4rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
-.tool-card:hover, .tool-card:focus-visible { border-color: var(--accent); }
-.tool-icon {
-  height: 50px; width: auto; align-self: flex-start; margin-bottom: 1rem;
-  transform-origin: left center;
-  transition: transform 0.25s ease;
+.tool-card:hover { background: var(--card-hover-bg); border-color: var(--card-hover-border); }
+.tool-card:focus-visible { background: var(--card-hover-bg); outline: 2px solid var(--accent); outline-offset: 2px; }
+.tool-icon-tile {
+  display: grid; place-items: center; align-self: flex-start;
+  width: 46px; height: 46px; border-radius: 11px;
+  background: var(--tile-bg); border: 1px solid var(--tile-border);
 }
-.tool-card:hover .tool-icon, .tool-card:focus-visible .tool-icon { transform: scale(1.12); }
+.tool-icon { height: 24px; width: 24px; }
 @media (prefers-reduced-motion: reduce) {
-  .tool-card, .tool-icon { transition: none; }
+  .tool-card { transition: none; }
 }
-.tool-card h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.4rem; }
-.tool-card p { margin: 0; color: var(--muted); font-size: 0.875rem; line-height: 1.5; }
+/* Title sits at the foot of the card, across from the icon. */
+.tool-card h3 { margin: auto 0 0; font-size: 1.05rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
 
 .tool-page { text-align: center; }
 .tool-page h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); margin-bottom: 0.5rem; }
@@ -219,7 +239,7 @@ h1, h2, h3 { margin: 0; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-  background: var(--accent); color: #fff; border: none; border-radius: var(--radius);
+  background: var(--accent); color: var(--on-accent); border: none; border-radius: var(--radius);
   padding: 0.9rem 2.2rem; font-size: 1.05rem; font-weight: 700; cursor: pointer;
 }
 .btn:hover:not(:disabled) { background: var(--accent-hover); }
@@ -229,7 +249,8 @@ h1, h2, h3 { margin: 0; }
 
 .error {
   margin: 1rem auto 0; max-width: 560px; padding: 0.75rem 1rem;
-  background: var(--danger-bg); color: var(--danger-text); border-radius: 8px; text-align: left;
+  background: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger-border); border-left-width: 4px;
+  border-radius: 8px; text-align: left;
 }
 
 .actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem; }
@@ -267,7 +288,7 @@ h1, h2, h3 { margin: 0; }
 .icon-btn {
   border: none; border-radius: 999px; background: var(--bg); color: var(--muted); cursor: pointer;
 }
-.icon-btn:hover { background: var(--accent); color: #fff; }
+.icon-btn:hover { background: var(--accent); color: var(--on-accent); }
 .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .icon-btn svg { display: block; width: 100%; height: 100%; }
 .file-card-action { position: relative; width: 1.75rem; height: 1.75rem; padding: 0.2rem; }
@@ -311,7 +332,7 @@ h1, h2, h3 { margin: 0; }
 }
 .file-badge {
   width: 64px; height: 84px; display: grid; place-items: center; border-radius: 6px;
-  background: var(--danger-bg); color: var(--accent); font-weight: 800; font-size: 0.9rem;
+  background: var(--accent-soft); color: var(--accent); border: 1px solid var(--border); font-weight: 800; font-size: 0.9rem;
 }
 .file-name { font-size: 0.85rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-card-name { font-size: 0.75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -330,7 +351,7 @@ h1, h2, h3 { margin: 0; }
 .btn-large { padding: 1.1rem 2.75rem; font-size: 1.25rem; }
 .btn-icon {
   display: grid; place-items: center; flex: none;
-  width: 1.6em; height: 1.6em; border-radius: 50%; background: rgb(255 255 255 / 0.22);
+  width: 1.6em; height: 1.6em; border-radius: 50%; background: color-mix(in srgb, var(--on-accent) 22%, transparent);
 }
 .btn-icon svg {
   width: 0.95em; height: 0.95em;
@@ -416,8 +437,7 @@ h1, h2, h3 { margin: 0; }
   border: 1px solid var(--border); border-radius: 50%; background: var(--surface); color: var(--text); cursor: pointer;
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.12); transition: color 0.15s, border-color 0.15s;
 }
-.fab:hover, .fab-active { color: var(--accent); }
-.fab-active { border-color: var(--accent); }
+.fab:hover, .fab-active { color: var(--accent); border-color: var(--accent); }
 .fab:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 /* Shown at once on hover or keyboard focus, to the button's left (it sits at the right edge). */
 .fab-tooltip {
@@ -428,8 +448,8 @@ h1, h2, h3 { margin: 0; }
 }
 .fab:hover .fab-tooltip, .fab:focus-visible .fab-tooltip { opacity: 1; visibility: visible; }
 /* The theme colour, for the main floating action. */
-.fab-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.fab-primary:hover, .fab-primary.fab-active { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
+.fab-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.fab-primary:hover, .fab-primary.fab-active { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); }
 .fab-badge {
   position: absolute; top: -0.35rem; left: -0.35rem; min-width: 1.3rem; height: 1.3rem; padding: 0 0.3rem;
   display: grid; place-items: center; border-radius: 999px; border: 2px solid var(--accent);
@@ -472,7 +492,7 @@ h1, h2, h3 { margin: 0; }
 .workspace-sidebar .error { max-width: none; }
 .workspace-sidebar-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); }
 .workspace-sidebar-footer .btn { width: 100%; gap: 0.9rem; font-size: 1.4rem; padding: 1.3rem 1rem; }
-.workspace-sidebar-footer .btn-icon { font-size: 0.8em; background: none; border: 2px solid #fff; }
+.workspace-sidebar-footer .btn-icon { font-size: 0.8em; background: none; border: 2px solid var(--on-accent); }
 .workspace-sidebar-footer .btn:hover:not(:disabled) .btn-icon svg { transform: none; }
 @media (min-width: 821px) {
   .app:has(.workspace) { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
@@ -499,7 +519,7 @@ h1, h2, h3 { margin: 0; }
   flex: none; width: 2rem; height: 2rem; border: none; border-radius: 999px;
   background: var(--bg); color: var(--muted); font-size: 1.3rem; line-height: 1; cursor: pointer;
 }
-.file-panel-remove:hover { background: var(--accent); color: #fff; }
+.file-panel-remove:hover { background: var(--accent); color: var(--on-accent); }
 .file-panel-remove:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .page-preview-status { margin: 0; padding: 1.5rem 1rem; text-align: center; color: var(--muted); }
 /* container-type lets each page size itself to the grid's visible height (cqh). */
