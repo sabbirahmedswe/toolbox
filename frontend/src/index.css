@@ -25,8 +25,8 @@
   --card-bg: #fcfbf8;
   --tile-bg: #ece9e1;
   --tile-border: #d6d2c7;
-  --card-hover-bg: #e8e8e8;
-  --card-hover-border: #b8b8b8;
+  --card-hover-bg: #f1eee6;
+  --card-hover-border: #c4beb0;
   --radius: 10px;
   color-scheme: light;
   font-family: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -61,7 +61,7 @@
   --card-bg: #121212;
   --tile-bg: #1c1c1c;
   --tile-border: #333333;
-  --card-hover-bg: #0b0b0b;
+  --card-hover-bg: #1a1a1a;
   --card-hover-border: #4d4d4d;
   color-scheme: dark;
 }
@@ -158,7 +158,7 @@ h1, h2, h3 { margin: 0; }
 }
 .nav-menu img { width: 1.6rem; height: 1.6rem; flex: none; }
 
-.main { max-width: 1000px; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+.main { max-width: 1240px; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
 
 .hero {
   position: relative; isolation: isolate;
@@ -206,14 +206,15 @@ h1, h2, h3 { margin: 0; }
 }
 
 .tool-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 300px));
-  justify-content: center; gap: 1rem;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem;
+  max-width: 1120px; margin: 0 auto;
 }
+@media (max-width: 960px) { .tool-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .tool-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 18px;
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 11 / 6;
   display: flex; flex-direction: column;
   padding: 1.25rem 1.4rem;
   transition: background-color 0.2s ease, border-color 0.2s ease;
@@ -230,7 +231,13 @@ h1, h2, h3 { margin: 0; }
   .tool-card { transition: none; }
 }
 /* Title sits at the foot of the card, across from the icon. */
-.tool-card h3 { margin: auto 0 0; font-size: 1.05rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
+.tool-card h3 { margin: auto 0 0; font-size: 0.95rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
+/* Two narrow columns on phones: a taller card leaves room for a title that wraps. */
+@media (max-width: 600px) {
+  .tool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+  .tool-card { aspect-ratio: 4 / 3; padding: 1rem; border-radius: 14px; }
+  .tool-card h3 { font-size: 0.875rem; }
+}
 
 .tool-page { text-align: center; }
 .tool-page h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); margin-bottom: 0.5rem; }
