@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from app import config
 from app.errors import ProcessingError
 from app.middleware import RequestSizeLimitMiddleware
-from app.routers import compress, images, merge, pdf_to_jpg, split
+from app.routers import compress, jpg_to_pdf, merge, pdf_to_jpg, split
 from app.services.ghostscript import ghostscript_version
 
 logger = logging.getLogger("uvicorn.error")
@@ -45,7 +45,7 @@ async def processing_error_handler(_: Request, exc: ProcessingError) -> JSONResp
 
 app.include_router(merge.router, prefix="/api", tags=["merge"])
 app.include_router(compress.router, prefix="/api", tags=["compress"])
-app.include_router(images.router, prefix="/api", tags=["images"])
+app.include_router(jpg_to_pdf.router, prefix="/api", tags=["jpg-to-pdf"])
 app.include_router(split.router, prefix="/api", tags=["split"])
 app.include_router(pdf_to_jpg.router, prefix="/api", tags=["pdf-to-jpg"])
 

@@ -1,11 +1,11 @@
 import type { ReactElement } from 'react'
 import compressIcon from './assets/icons/compress.svg'
-import imageToPdfIcon from './assets/icons/image-to-pdf.svg'
+import jpgToPdfIcon from './assets/icons/jpg-to-pdf.svg'
 import mergeIcon from './assets/icons/merge.svg'
 import pdfToJpgIcon from './assets/icons/pdf-to-jpg.svg'
 import splitIcon from './assets/icons/split.svg'
 import CompressPage from './pages/CompressPage'
-import ImagesToPdfPage from './pages/ImagesToPdfPage'
+import JpgToPdfPage from './pages/JpgToPdfPage'
 import MergePage from './pages/MergePage'
 import PdfToJpgPage from './pages/PdfToJpgPage'
 import SplitPage from './pages/SplitPage'
@@ -50,11 +50,11 @@ export const TOOLS: Tool[] = [
     page: <CompressPage />,
   },
   {
-    path: '/images-to-pdf',
-    title: 'Image to PDF',
-    description: 'Convert JPG and PNG images to PDF in seconds, in any order you like.',
-    icon: imageToPdfIcon,
-    page: <ImagesToPdfPage />,
+    path: '/jpg-to-pdf',
+    title: 'JPG to PDF',
+    description: 'Convert JPG images to PDF in seconds, in any order you like.',
+    icon: jpgToPdfIcon,
+    page: <JpgToPdfPage />,
     navSection: 'Convert to PDF',
   },
   {

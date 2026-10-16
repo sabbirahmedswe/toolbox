@@ -17,9 +17,8 @@ PDF_HEADER_WINDOW = 1024
 
 PDF = "pdf"
 JPEG = "jpeg"
-PNG = "png"
 
-_LABELS = {PDF: "PDF", JPEG: "JPEG", PNG: "PNG"}
+_LABELS = {PDF: "PDF", JPEG: "JPEG"}
 
 
 def attachment(filename: str) -> str:
@@ -78,8 +77,6 @@ def detect_kind(head: bytes, allowed: tuple[str, ...]) -> str | None:
         return PDF
     if JPEG in allowed and head.startswith(b"\xff\xd8\xff"):
         return JPEG
-    if PNG in allowed and head.startswith(b"\x89PNG\r\n\x1a\n"):
-        return PNG
     return None
 
 

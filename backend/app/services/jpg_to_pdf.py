@@ -1,19 +1,16 @@
 from pathlib import Path
 
 import img2pdf
-from PIL import Image, ImageMath, ImageOps
+from PIL import Image, ImageOps
 
 from app import config
 from app.errors import ProcessingError
-from app.utils.files import JPEG, PNG
 
 # EXIF orientations img2pdf can apply losslessly (via the page's /Rotate); the rest are mirrored.
 _LOSSLESS_ORIENTATIONS = {1, 3, 6, 8}
 # Orientations that turn the image a quarter, swapping width and height.
 _QUARTER_TURNS = {5, 6, 7, 8}
 _EXIF_ORIENTATION = 0x0112
-# Pillow decoders allowed for each detected kind, so no other image plugin ever parses the upload.
-_FORMATS = {JPEG: ["JPEG"], PNG: ["PNG"]}
 
 # Page sizing: honour the image's DPI when it's plausible, otherwise assume 96 dpi.
 DEFAULT_DPI = 96
@@ -33,49 +30,13 @@ def _page_layout(width_px: int, height_px: int, dpi: tuple[float, float]) -> tup
     return width, height, width, height
 
 
-def _has_transparency(im: Image.Image) -> bool:
-    return im.mode in ("RGBA", "LA", "PA") or "transparency" in im.info
-
-
-def _is_grey(im: Image.Image) -> bool:
-    return im.mode in ("1", "L", "LA") or im.mode.startswith("I")
-
-
-def _flatten(im: Image.Image) -> Image.Image:
-    """Return an image img2pdf embeds without a soft mask: transparency is composited onto white.
-
-    Greyscale stays greyscale and CMYK stays CMYK, so an embedded ICC profile still matches.
-    """
-    if im.mode.startswith("I"):  # 16/32-bit greyscale: scale down rather than clip
-        wide = im.convert("I")
-        grey = wide.point(lambda v: v / 256).convert("L")
-        if "transparency" not in im.info:
-            return grey
-        key = im.info["transparency"]
-        alpha = ImageMath.lambda_eval(lambda a: (a["x"] != key) * 255, x=wide).convert("L")
-        background = Image.new("L", im.size, 255)
-        background.paste(grey, mask=alpha)
-        return background
-    if _has_transparency(im):
-        mode, alpha_mode = ("L", "LA") if _is_grey(im) else ("RGB", "RGBA")
-        with_alpha = im.convert(alpha_mode)
-        background = Image.new(mode, im.size, 255 if mode == "L" else (255, 255, 255))
-        background.paste(with_alpha.convert(mode), mask=with_alpha.getchannel("A"))
-        return background
-    if im.mode in ("RGB", "L", "CMYK"):
-        return im
-    return im.convert("L" if _is_grey(im) else "RGB")
-
-
-def _embeddable_as_is(im: Image.Image, kind: str, orientation: int) -> bool:
+def _embeddable_as_is(im: Image.Image, orientation: int) -> bool:
     """Whether img2pdf can embed the original file directly, without re-encoding."""
-    if kind == JPEG:
-        return orientation in _LOSSLESS_ORIENTATIONS and im.mode in ("L", "RGB", "CMYK")
-    return orientation == 1 and im.mode in ("L", "RGB") and not _has_transparency(im)
+    return orientation in _LOSSLESS_ORIENTATIONS and im.mode in ("L", "RGB", "CMYK")
 
 
-def prepare_image(path: Path, kind: str, name: str, out_dir: Path) -> Path:
-    """Validate an uploaded image and return a file img2pdf can embed as one page.
+def prepare_image(path: Path, name: str, out_dir: Path) -> Path:
+    """Validate an uploaded JPEG and return a file img2pdf can embed as one page.
 
     Files img2pdf can embed directly are returned as-is (no re-encoding);
     everything else is normalised with Pillow first.
@@ -84,7 +45,8 @@ def prepare_image(path: Path, kind: str, name: str, out_dir: Path) -> Path:
     # (otherwise Pillow's ~89 MP default would apply first). Set per call so config is read at request time.
     Image.MAX_IMAGE_PIXELS = config.MAX_IMAGE_PIXELS
     try:
-        with Image.open(path, formats=_FORMATS[kind]) as im:
+        # Only the JPEG decoder, so no other image plugin ever parses the upload.
+        with Image.open(path, formats=["JPEG"]) as im:
             width, height = im.size
             if width * height > config.MAX_IMAGE_PIXELS:
                 raise ProcessingError(
@@ -93,7 +55,7 @@ def prepare_image(path: Path, kind: str, name: str, out_dir: Path) -> Path:
                 )
             im.load()  # decode fully so truncated or corrupt files are caught here
             orientation = im.getexif().get(_EXIF_ORIENTATION, 1)
-            if _embeddable_as_is(im, kind, orientation):
+            if _embeddable_as_is(im, orientation):
                 return path
 
             options = {}
@@ -101,12 +63,13 @@ def prepare_image(path: Path, kind: str, name: str, out_dir: Path) -> Path:
                 options["dpi"] = (dpi[1], dpi[0]) if orientation in _QUARTER_TURNS else dpi
             if icc := im.info.get("icc_profile"):
                 options["icc_profile"] = icc
-            page = _flatten(ImageOps.exif_transpose(im))
-        out = out_dir / f"{path.stem}-page.{'jpg' if kind == JPEG else 'png'}"
-        if kind == JPEG:
-            page.save(out, "JPEG", quality=95, **options)
-        else:
-            page.save(out, "PNG", **options)
+            page = ImageOps.exif_transpose(im)
+            # Greyscale and CMYK stay as they are, so an embedded ICC profile still matches. Pillow's JPEG decoder
+            # gives no other modes today; this only guards against one it might add, which img2pdf can't embed.
+            if page.mode not in ("L", "RGB", "CMYK"):
+                page = page.convert("RGB")
+        out = out_dir / f"{path.stem}-page.jpg"
+        page.save(out, "JPEG", quality=95, **options)
         page.close()  # free the decoded pixels before the next image
         return out
     except ProcessingError:
@@ -117,9 +80,9 @@ def prepare_image(path: Path, kind: str, name: str, out_dir: Path) -> Path:
         raise ProcessingError(f'"{name}" appears to be damaged and could not be read.') from e
 
 
-def images_to_pdf(inputs: list[tuple[Path, str, str]], workdir: Path) -> bytes:
-    """Convert (path, kind, display name) images to a PDF with one page per image, in order."""
-    pages = [str(prepare_image(path, kind, name, workdir)) for path, kind, name in inputs]
+def jpg_to_pdf(inputs: list[tuple[Path, str]], workdir: Path) -> bytes:
+    """Convert (path, display name) JPEGs to a PDF with one page per image, in order."""
+    pages = [str(prepare_image(path, name, workdir)) for path, name in inputs]
     try:
         return img2pdf.convert(pages, layout_fun=_page_layout)
     except Exception as e:  # img2pdf has its own error types for unsupported variants
