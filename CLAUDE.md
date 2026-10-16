@@ -52,3 +52,8 @@ Setup and run instructions are in `README.md`. These are the forms to use from C
 - Keep site-wide copy (hero, page title) tool-agnostic: the toolbox isn't PDF-only.
 - Use `postForFile` / `downloadBlob` from `src/api/client.ts`, and `FileDropzone` / `SortableFileList` for uploads.
 - Plain CSS in `src/index.css` using the `:root` variables; no UI library.
+
+
+## Git
+- Never add Claude as a co-author to any commit message.
+- Write simple, easy to understand commit messages.
