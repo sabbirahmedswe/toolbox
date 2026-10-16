@@ -1,6 +1,7 @@
 import { Link, NavLink, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import NavGroup from './components/NavGroup'
+import ThemeToggle from './components/ThemeToggle'
 import { NAV, TOOLS } from './tools'
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
             ),
           )}
         </nav>
+        <ThemeToggle />
       </header>
       <main className="main">
         <Routes>
